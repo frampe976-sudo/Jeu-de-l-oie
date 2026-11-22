@@ -36,33 +36,40 @@ body { margin: 0; background: var(--ink); color: var(--ivory); font-family: var(
 .hud > * { pointer-events: auto; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
 
-.brand { grid-column: 1; grid-row: 1; align-self: start; justify-self: start; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 14px; }
-.brand h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 1.5rem; letter-spacing: -0.01em; line-height: 1; }
+.brand { grid-column: 1; grid-row: 1; align-self: start; justify-self: start; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 10px 8px 14px; max-width: 100%; box-sizing: border-box; }
+.brand h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 1.25rem; letter-spacing: -0.01em; line-height: 1; }
 .brand h1 span { color: var(--saffron); }
-.brand .tools { display: flex; gap: 6px; flex-wrap: wrap; }
+/* outils repliés dans le menu pour laisser le plateau visible */
+.brand .tools { display: none; gap: 6px; flex-wrap: wrap; flex-basis: 100%; }
+.brand.open .tools { display: flex; }
+/* les panneaux s'estompent pendant les lancers et déplacements */
+.brand, .side { transition: opacity .45s ease; }
+body.anim .brand:not(.open):not(:hover):not(:focus-within), body.anim .side:not(:hover):not(:focus-within) { opacity: 0.28; }
 button { font: inherit; cursor: pointer; }
 .chip { background: transparent; color: var(--ivory); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 0.85rem; font-weight: 700; }
 .chip:hover { border-color: var(--saffron); }
 .chip[aria-pressed="true"] { background: rgba(245,176,65,0.16); border-color: var(--saffron); color: var(--saffron); }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--saffron); outline-offset: 2px; }
 
-.side { grid-column: 2; grid-row: 1 / span 2; width: 272px; display: flex; flex-direction: column; gap: 12px; min-height: 0; align-self: start; max-height: 100%; }
-.players { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.side { grid-column: 2; grid-row: 1 / span 2; width: 214px; display: flex; flex-direction: column; gap: 12px; min-height: 0; align-self: start; max-height: 100%; }
+.players { padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.players h2 { display: none; }
 .players h2, .log h2 { margin: 0 0 2px; font-family: var(--display); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
-.pl { display: grid; grid-template-columns: 14px minmax(0,1fr) auto; gap: 4px 10px; align-items: center; padding: 8px 10px; border-radius: 11px; border: 1px solid transparent; transition: background .3s, border-color .3s, transform .3s; }
+.pl { display: grid; grid-template-columns: 12px minmax(0,1fr) auto; gap: 3px 8px; align-items: center; padding: 6px 8px; border-radius: 11px; border: 1px solid transparent; transition: background .3s, border-color .3s, transform .3s; }
 .pl.active { border-color: var(--saffron); background: rgba(245,176,65,0.1); transform: translateX(-4px); }
-.pl .dot { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.25), 0 0 0 2px rgba(255,255,255,0.08); }
+.pl .dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.25), 0 0 0 2px rgba(255,255,255,0.08); }
 .pl .nm { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pl .nm small { font-weight: 600; color: var(--muted); margin-left: 4px; }
 .pl .pos { font-family: var(--display); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 1.05rem; }
 .pl .bar { grid-column: 2 / span 2; height: 5px; border-radius: 5px; background: var(--line); overflow: hidden; }
 .pl .bar i { display: block; height: 100%; border-radius: 5px; transition: width .6s cubic-bezier(.2,.8,.2,1); }
 .pl .st { grid-column: 2 / span 2; font-size: 0.78rem; color: var(--saffron); font-weight: 800; }
-.log { padding: 12px; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.log { padding: 12px; min-height: 0; overflow: hidden; display: none; flex-direction: column; }
+.side.showlog .log { display: flex; }
 .log ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; max-height: 28vh; font-size: 0.85rem; color: var(--muted); }
 .log li b { color: var(--ivory); }
 
-.controls { grid-column: 1 / span 2; grid-row: 3; justify-self: center; display: flex; align-items: center; gap: 16px; padding: 10px 10px 10px 18px; justify-content: center; }
+.controls { grid-column: 1 / span 2; grid-row: 3; justify-self: center; display: flex; align-items: center; gap: 14px; padding: 7px 7px 7px 16px; justify-content: center; }
 .turn { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .turn small { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; }
 .turn strong { font-family: var(--display); font-size: 1.15rem; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
@@ -157,8 +164,6 @@ body.tv .roll:focus { transform: scale(1.06); }
   .players h2 { display: none; }
   .pl { flex: 0 0 auto; width: 150px; padding: 6px 8px; }
   .pl.active { transform: none; }
-  .log { display: none; }
-  .side.showlog .log { display: flex; }
   .controls { grid-column: 1; grid-row: 4; width: 100%; box-sizing: border-box; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 14px; }
   .roll { padding: 11px 14px; font-size: 0.95rem; }
   .turn strong { font-size: 1rem; }
@@ -177,7 +182,8 @@ body.tv .roll:focus { transform: scale(1.06); }
 <div class="hud">
   <header class="brand panel">
     <h1>Jeu de l'<span>Oie</span></h1>
-    <div class="tools">
+    <button class="chip" id="btnMenu" type="button" aria-expanded="false" aria-controls="tools">Menu</button>
+    <div class="tools" id="tools">
       <button class="chip" id="btnRules" type="button">Règles</button>
       <button class="chip" id="btnNew" type="button">Nouvelle partie</button>
       <button class="chip" id="btnSpeed" type="button">Vitesse : normale</button>
@@ -521,12 +527,48 @@ function resize() {
   quality.apply();
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
-  camera.updateProjectionMatrix();
+  rawDist = camera.aspect >= 1.25 ? 23 : 23 * Math.min(1.85, 1.25 / camera.aspect);
+  if (typeof layoutView === 'function') layoutView(); else camera.updateProjectionMatrix();
 }
 let baseDist = 24;
+let rawDist = 24;
+/* Centre le plateau dans l'espace laissé libre par les panneaux (décalage de la projection)
+   et recule la caméra si cet espace est plus petit que l'écran. */
+function layoutView() {
+  const W = window.innerWidth, H = window.innerHeight;
+  const box = (sel) => {
+    const el = document.querySelector(sel);
+    if (!el || el.offsetParent === null) return null;
+    const r = el.getBoundingClientRect();
+    return r.width && r.height ? r : null;
+  };
+  const brand = box('.brand'), side = box('.side'), ctr = box('.controls');
+  let top = brand ? brand.bottom : 0, bottom = ctr ? ctr.top : H, left = 0, right = W;
+  if (side) {
+    if (side.width > W * 0.5) top = Math.max(top, side.bottom);       // téléphone : joueurs en bandeau
+    else {
+      // le plateau est rond : on garde la zone où il peut être le plus grand
+      const fit = (w, h) => Math.min(w, h * 1.3);
+      const beside = fit(side.left - left, bottom - top);                     // à gauche de la colonne
+      const below = fit(right - left, bottom - Math.max(top, side.bottom));   // sous la colonne
+      if (beside >= below) right = side.left; else top = Math.max(top, side.bottom);
+    }
+  }
+  top += 6; bottom -= 6; right -= 6;
+  const freeW = Math.max(50, right - left), freeH = Math.max(50, bottom - top);
+  const cx = (left + right) / 2, cy = (top + bottom) / 2;
+  camera.setViewOffset(W, H, W / 2 - cx, H / 2 - cy, W, H);
+  camera.updateProjectionMatrix();
+  // taille maximale du plateau rond dans l'espace libre, comparée à l'écran entier
+  const frac = Math.max(0.5, Math.min(1, Math.min(freeW, freeH * 1.3) / Math.min(W, H * 1.3)));
+  baseDist = rawDist / Math.pow(frac, 0.9);
+  scene.fog.near = baseDist + 4;
+  scene.fog.far = baseDist + 34;
+}
 function frameCamera() {
   const a = camera.aspect;
-  baseDist = a >= 1.25 ? 23 : 23 * Math.min(1.85, 1.25 / a);
+  rawDist = a >= 1.25 ? 23 : 23 * Math.min(1.85, 1.25 / a);
+  layoutView();
   const dir = new THREE.Vector3(0, 0.7, 0.72).normalize();
   controls.target.set(0, 0, 1);
   camera.position.copy(dir.multiplyScalar(baseDist)).add(controls.target);
@@ -1227,6 +1269,8 @@ function renderPlayers() {
     btn.disabled = !canRoll;
     btn.classList.toggle('ready', canRoll);
     btn.textContent = p.human ? 'Lancer les dés' : 'Le robot joue…';
+    document.body.classList.toggle('anim', state.busy && !state.over);
+    layoutView();
     const ae = document.activeElement;
     if (canRoll && $('setup').hidden && $('rulesBox').hidden && $('winBox').hidden && (!ae || ae === document.body || ae.disabled || ae === btn)) btn.focus({ preventScroll: true });
   }
@@ -1508,7 +1552,13 @@ $('btnFollow').addEventListener('click', (e) => {
   state.follow = !state.follow;
   e.currentTarget.setAttribute('aria-pressed', String(state.follow));
 });
-$('btnLog').addEventListener('click', (e) => { const on = $('side').classList.toggle('showlog'); e.currentTarget.setAttribute('aria-pressed', String(on)); });
+$('btnLog').addEventListener('click', (e) => { const on = $('side').classList.toggle('showlog'); e.currentTarget.setAttribute('aria-pressed', String(on)); layoutView(); });
+$('btnMenu').addEventListener('click', (e) => {
+  const open = document.querySelector('.brand').classList.toggle('open');
+  e.currentTarget.setAttribute('aria-expanded', String(open));
+  e.currentTarget.textContent = open ? 'Fermer' : 'Menu';
+  layoutView();
+});
 /* Navigation au clavier et à la télécommande (flèches, OK, Retour) */
 function activeScope() {
   for (const id of overlayIds) if (!$(id).hidden) return $(id);
@@ -1729,6 +1779,7 @@ fontsReady.catch(() => {}).then(() => {
   renderSetup();
   renderPlayers();
   frame();
+  layoutView();
   $('btnStart').focus({ preventScroll: true });
 });
 })();
