@@ -7,6 +7,7 @@ Le jeu de l'oie traditionnel (63 cases) sur un plateau en spirale en 3D, jouable
 - Caméra libre : glisser pour tourner, molette ou pincement pour zoomer
 - Survol (ou toucher) d'une case pour lire sa règle
 - Barre d'espace pour lancer les dés
+- Résolution adaptative jusqu'à la 4K (bouton « Qualité » : auto, 720p, 1080p, 1440p, 4K)
 - Animations travaillées : sauts avec écrasement et rebond, dés qui rebondissent, oies qui s'envolent, confettis, secousses de caméra
 - Caméra qui suit et se rapproche du pion pendant ses déplacements
 - Sons synthétisés (dés, sauts, oie, fanfare) et réglage de vitesse (lente, normale, rapide)
@@ -33,6 +34,7 @@ Le code source est dans `src/game.html`. `./build.sh` génère `index.html`.
 Le dossier `android/` contient une application Android TV qui embarque le jeu hors ligne (three.js et polices inclus) dans une WebView plein écran.
 
 - Télécommande : flèches pour se déplacer entre les boutons, **OK** pour lancer les dés ou valider, **Retour** pour ouvrir le menu (un second **Retour** depuis le menu quitte l'application).
+- Résolution : en mode « auto », le rendu suit la définition réelle du téléviseur (jusqu'à 3840 × 2160) et baisse si l'image saccade. L'application demande le mode d'affichage 4K quand le téléviseur le propose.
 - L'APK est construit automatiquement par GitHub Actions (workflow « Application Android TV ») à chaque modification, et publié dans la release `android-tv` sous le nom `jeu-de-l-oie-tv.apk`.
 
 ### Installer sur un téléviseur TCL

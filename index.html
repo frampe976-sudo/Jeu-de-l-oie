@@ -182,6 +182,7 @@ body.tv .roll:focus { transform: scale(1.06); }
       <button class="chip" id="btnNew" type="button">Nouvelle partie</button>
       <button class="chip" id="btnSpeed" type="button">Vitesse : normale</button>
       <button class="chip" id="btnSound" type="button" aria-pressed="true">Son</button>
+      <button class="chip" id="btnQuality" type="button">Qualité : auto</button>
       <button class="chip" id="btnFollow" type="button" aria-pressed="true">Caméra auto</button>
       <button class="chip" id="btnLog" type="button" aria-pressed="false">Journal</button>
     </div>
@@ -406,7 +407,6 @@ const sfx = (() => {
 /* ================= Scène, rendu, lumière ================= */
 const canvas = $('scene');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, TV ? 1.5 : 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -469,8 +469,56 @@ const rim = new THREE.DirectionalLight(C('#7d9fff'), 0.45);
 rim.position.set(-14, 9, -12);
 scene.add(rim);
 
+/* ---------- Résolution adaptative (jusqu'à 3840 × 2160) ----------
+   « auto » : la résolution de rendu monte jusqu'à celle de l'écran (plafonnée à la 4K)
+   et baisse dès que les images par seconde chutent, pour garder le jeu fluide.
+   Les autres choix fixent la hauteur de rendu (720p, 1080p, 1440p, 4K). */
+const MAX_PIXELS = 3840 * 2160;
+const QUALITIES = [{ h: 0, label: 'auto' }, { h: 720, label: '720p' }, { h: 1080, label: '1080p' }, { h: 1440, label: '1440p' }, { h: 2160, label: '4K' }];
+const quality = {
+  idx: Math.min(QUALITIES.length - 1, Math.max(0, store.get('quality', 0) | 0)),
+  scale: TV ? 0.7 : 1,      // part de la résolution native utilisée en mode auto
+  acc: 0, frames: 0, cooldown: 2,
+  // Côté court de l'écran en pixels physiques ; l'application Android TV fournit la taille réelle du téléviseur.
+  nativeShort() {
+    let w = 0, h = 0;
+    try { if (window.AndroidTV) { w = AndroidTV.displayWidth(); h = AndroidTV.displayHeight(); } } catch (e) { /* interface absente */ }
+    if (!w || !h) { const d = window.devicePixelRatio || 1; w = window.innerWidth * d; h = window.innerHeight * d; }
+    return Math.min(Math.min(w, h), 2160);
+  },
+  maxRatio() { return Math.sqrt(MAX_PIXELS / Math.max(1, window.innerWidth * window.innerHeight)); },
+  ratio() {
+    const shortCss = Math.max(1, Math.min(window.innerWidth, window.innerHeight));
+    const q = QUALITIES[this.idx];
+    const r = q.h ? q.h / shortCss : (this.nativeShort() / shortCss) * this.scale;
+    return Math.max(0.5, Math.min(r, this.maxRatio()));
+  },
+  apply() {
+    const r = this.ratio();
+    if (Math.abs(renderer.getPixelRatio() - r) > 0.01) renderer.setPixelRatio(r);
+    const shortPx = Math.round(Math.min(window.innerWidth, window.innerHeight) * r);
+    const btn = document.getElementById('btnQuality');
+    if (btn) btn.textContent = 'Qualité : ' + QUALITIES[this.idx].label + (QUALITIES[this.idx].h ? '' : ' · ' + shortPx + 'p');
+  },
+  // Appelée à chaque image avec le temps réel écoulé ; ajuste l'échelle toutes les 1,5 s.
+  tick(realDt) {
+    if (QUALITIES[this.idx].h || realDt <= 0 || realDt > 2) return;  // > 2 s : onglet en arrière-plan, on ignore
+    this.acc += realDt; this.frames++;
+    this.cooldown -= realDt;
+    if (this.acc < 1.5) return;
+    const fps = this.frames / this.acc;
+    this.acc = 0; this.frames = 0;
+    if (this.cooldown > 0) return;
+    if (fps < 45 && this.scale > 0.4) { this.scale = Math.max(0.4, this.scale - (fps < 30 ? 0.2 : 0.1)); this.cooldown = 2; this.apply(); }
+    else if (fps > 57 && this.scale < 1) { this.scale = Math.min(1, this.scale + 0.05); this.cooldown = 4; this.apply(); }
+  },
+  cycle() { this.idx = (this.idx + 1) % QUALITIES.length; store.set('quality', this.idx); this.acc = 0; this.frames = 0; this.cooldown = 2; this.apply(); },
+};
+quality.apply();
+
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
+  quality.apply();
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
@@ -1517,6 +1565,8 @@ window.addEventListener('keydown', (e) => {
 $('btnSound').setAttribute('aria-pressed', String(sfx.on));
 $('btnSound').textContent = sfx.on ? 'Son' : 'Son coupé';
 $('btnSpeed').textContent = 'Vitesse : ' + SPEEDS[speedIdx].label;
+$('btnQuality').addEventListener('click', () => quality.cycle());
+quality.apply();
 
 /* ================= Survol des cases ================= */
 const ray = new THREE.Raycaster();
@@ -1562,7 +1612,9 @@ const tmpV = new THREE.Vector3();
 const GREY = new THREE.Color(0.06, 0.06, 0.07);
 const clock = new THREE.Clock();
 function frame() {
-  const dt = Math.min(0.05, clock.getDelta());
+  const rawDt = clock.getDelta();
+  quality.tick(rawDt);
+  const dt = Math.min(0.05, rawDt);
   const t = clock.elapsedTime;
   const p = cur();
 
