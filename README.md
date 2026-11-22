@@ -7,6 +7,9 @@ Le jeu de l'oie traditionnel (63 cases) sur un plateau en spirale en 3D, jouable
 - Caméra libre : glisser pour tourner, molette ou pincement pour zoomer
 - Survol (ou toucher) d'une case pour lire sa règle
 - Barre d'espace pour lancer les dés
+- Animations travaillées : sauts avec écrasement et rebond, dés qui rebondissent, oies qui s'envolent, confettis, secousses de caméra
+- Caméra qui suit et se rapproche du pion pendant ses déplacements
+- Sons synthétisés (dés, sauts, oie, fanfare) et réglage de vitesse (lente, normale, rapide)
 
 ## Jouer
 
