@@ -27,3 +27,29 @@ Ouvrir `index.html` dans un navigateur (connexion Internet nécessaire pour char
 ## Développement
 
 Le code source est dans `src/game.html`. `./build.sh` génère `index.html`.
+
+## Application Android TV (TCL, Google TV…)
+
+Le dossier `android/` contient une application Android TV qui embarque le jeu hors ligne (three.js et polices inclus) dans une WebView plein écran.
+
+- Télécommande : flèches pour se déplacer entre les boutons, **OK** pour lancer les dés ou valider, **Retour** pour ouvrir le menu (un second **Retour** depuis le menu quitte l'application).
+- L'APK est construit automatiquement par GitHub Actions (workflow « Application Android TV ») à chaque modification, et publié dans la release `android-tv` sous le nom `jeu-de-l-oie-tv.apk`.
+
+### Installer sur un téléviseur TCL
+
+1. Sur le téléviseur, autoriser les applications de sources inconnues : Paramètres → Applications → Sécurité et restrictions → Sources inconnues. Sur Google TV, il faut d'abord activer les options développeur (Paramètres → Système → À propos → appuyer 7 fois sur « Build de l'OS Android TV »).
+2. Installer l'application **Downloader** (Play Store du téléviseur), autoriser Downloader à installer des applications inconnues, y saisir l'adresse de téléchargement de `jeu-de-l-oie-tv.apk` (page Releases du dépôt), puis installer.
+   Autre méthode : copier l'APK sur une clé USB et l'ouvrir avec le gestionnaire de fichiers du téléviseur.
+3. Le jeu apparaît dans la liste des applications avec sa bannière.
+
+### Signature et mises à jour
+
+Sans configuration, chaque construction est signée avec une clé de débogage différente : pour installer une nouvelle version, il faut d'abord désinstaller l'ancienne.
+Pour des mises à jour directes, créer une clé (`keytool -genkeypair -keystore release.jks -alias jeudeloie -keyalg RSA -validity 10000`) et l'ajouter dans les secrets du dépôt (Settings → Secrets and variables → Actions) : `ANDROID_KEYSTORE_BASE64` (contenu de `release.jks` en base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+
+### Construire soi-même
+
+```sh
+./build.sh                                   # génère android/app/src/main/assets/www
+gradle -p android assembleRelease            # nécessite le SDK Android (compileSdk 34)
+```

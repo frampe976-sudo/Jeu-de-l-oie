@@ -44,7 +44,7 @@ button { font: inherit; cursor: pointer; }
 .chip { background: transparent; color: var(--ivory); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 0.85rem; font-weight: 700; }
 .chip:hover { border-color: var(--saffron); }
 .chip[aria-pressed="true"] { background: rgba(245,176,65,0.16); border-color: var(--saffron); color: var(--saffron); }
-button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--saffron); outline-offset: 2px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--saffron); outline-offset: 2px; }
 
 .side { grid-column: 2; grid-row: 1 / span 2; width: 272px; display: flex; flex-direction: column; gap: 12px; min-height: 0; align-self: start; max-height: 100%; }
 .players { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -125,7 +125,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .seg button[aria-pressed="true"] { background: var(--saffron); color: #1d1405; border-color: var(--saffron); }
 .prow { display: grid; grid-template-columns: 16px minmax(0,1fr) auto; gap: 10px; align-items: center; margin-bottom: 8px; }
 .prow .dot { width: 16px; height: 16px; border-radius: 50%; }
-.prow input, .prow select { background: rgba(255,255,255,0.05); border: 1px solid var(--line); color: var(--ivory); border-radius: 8px; padding: 9px 10px; font: inherit; min-width: 0; }
+.prow input { background: rgba(255,255,255,0.05); border: 1px solid var(--line); color: var(--ivory); border-radius: 8px; padding: 9px 10px; font: inherit; min-width: 0; }
 .card .actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
 .rules { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .rules li { display: grid; grid-template-columns: 44px minmax(0,1fr); gap: 12px; align-items: start; line-height: 1.45; }
@@ -135,6 +135,17 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .rank li .dot { width: 12px; height: 12px; border-radius: 50%; }
 .rank li span:last-child { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
 .loading { position: fixed; inset: 0; display: grid; place-items: center; font-family: var(--display); color: var(--muted); }
+
+/* Télévision : navigation à la télécommande */
+.hint { display: none; font-size: 0.78rem; color: var(--muted); font-weight: 700; line-height: 1.3; }
+body.tv .hint { display: block; }
+body.tv #tip { display: none !important; }
+/* marge de sécurité contre le rognage des bords (overscan) des téléviseurs */
+body.tv .hud { padding-block: 24px; padding-left: 32px; padding-right: 32px; }
+body.tv button:focus, body.tv input:focus { outline: 3px solid var(--saffron); outline-offset: 3px; box-shadow: 0 0 0 6px rgba(245,176,65,0.25); }
+body.tv .chip:focus, body.tv .seg button:focus { transform: scale(1.06); }
+body.tv .roll:focus { transform: scale(1.06); }
+.ptype { min-width: 86px; }
 
 @media (max-width: 760px) {
   .hud { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr auto; }
@@ -181,6 +192,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
     <div class="turn"><small>Au tour de</small><strong id="turnName"><i></i>—</strong></div>
     <div class="dice-res" id="diceRes">– + –</div>
     <button class="roll" id="btnRoll" type="button" disabled>Lancer les dés</button>
+    <div class="hint" id="tvHint">OK : lancer<br>Retour : menu</div>
   </div>
 </div>
 
@@ -210,6 +222,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
     </div>
     <div class="actions">
       <button class="chip" type="button" id="setupRules">Lire les règles</button>
+      <button class="chip" type="button" id="btnResume" hidden>Reprendre</button>
       <button class="roll" type="button" id="btnStart">Commencer</button>
     </div>
   </div>
@@ -285,6 +298,8 @@ const RULES = [
 
 /* ================= Réglages et outils ================= */
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TV = /[?&]tv=1/.test(location.search);
+if (TV) document.body.classList.add('tv');
 const SPEEDS = [{ f: 1.45, label: 'lente' }, { f: 1, label: 'normale' }, { f: 0.55, label: 'rapide' }];
 const store = {
   get(k, d) { try { const v = localStorage.getItem('oie3d.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -389,7 +404,7 @@ const sfx = (() => {
 /* ================= Scène, rendu, lumière ================= */
 const canvas = $('scene');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, TV ? 1.5 : 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -443,7 +458,7 @@ const lamp = new THREE.SpotLight(C('#ffe2b5'), 2.6, 0, 0.5, 0.75, 1);
 lamp.position.set(5, 24, 9);
 lamp.target.position.set(0, 0, 0.5);
 lamp.castShadow = true;
-lamp.shadow.mapSize.set(2048, 2048);
+lamp.shadow.mapSize.set(TV ? 1024 : 2048, TV ? 1024 : 2048);
 lamp.shadow.camera.near = 8; lamp.shadow.camera.far = 50;
 lamp.shadow.bias = -0.0006;
 lamp.shadow.radius = 4;
@@ -995,7 +1010,8 @@ async function rollDiceAnim(a, b) {
 }
 
 /* ================= État de jeu ================= */
-const state = { players: [], cur: 0, busy: false, gid: 0, over: false, follow: true, started: false, mover: null, cine: false };
+const state = { players: [], cur: 0, busy: false, gid: 0, over: false, follow: true, started: false, mover: null, cine: false, paused: false };
+async function waitUnpaused() { while (state.paused) await new Promise((r) => setTimeout(r, 200)); }
 const setup = { count: 3, players: DEFAULT_NAMES.map((n, i) => ({ name: n, human: i === 0 })) };
 const cur = () => state.players[state.cur];
 
@@ -1161,6 +1177,8 @@ function renderPlayers() {
     btn.disabled = !canRoll;
     btn.classList.toggle('ready', canRoll);
     btn.textContent = p.human ? 'Lancer les dés' : 'Le robot joue…';
+    const ae = document.activeElement;
+    if (canRoll && $('setup').hidden && $('rulesBox').hidden && $('winBox').hidden && (!ae || ae === document.body || ae.disabled || ae === btn)) btn.focus({ preventScroll: true });
   }
 }
 function toScreen(v) {
@@ -1235,6 +1253,7 @@ async function startTurn() {
   renderPlayers();
   if (!p.human) {
     await sleep(900);
+    await waitUnpaused();
     if (gid !== state.gid) return;
     playTurn();
   }
@@ -1242,6 +1261,7 @@ async function startTurn() {
 async function nextPlayer() {
   if (state.over) return;
   await sleep(350);
+  await waitUnpaused();
   state.cur = (state.cur + 1) % state.players.length;
   startTurn();
 }
@@ -1364,7 +1384,7 @@ function win(p) {
     $('winLead').textContent = "Arrivée pile sur la case 63, au Jardin de l'Oie.";
     const ranked = [...state.players].sort((x, y) => y.pos - x.pos);
     $('winRank').innerHTML = ranked.map((q, k) => `<li><span class="dot" style="background:${q.color}"></span><span>${k + 1}. ${escapeHtml(q.name)}</span><span>case ${q.pos}</span></li>`).join('');
-    $('winBox').hidden = false;
+    openOverlay('winBox', 'winAgain');
     controls.autoRotateSpeed = 0.45;
   }, 3000);
 }
@@ -1381,11 +1401,14 @@ function renderSetup() {
     r.className = 'prow';
     r.innerHTML = `<span class="dot" style="background:${PLAYER_COLORS[i]}"></span>
       <input id="pname${i}" type="text" maxlength="16" aria-label="Nom du joueur ${i + 1}" value="${escapeHtml(s.name)}">
-      <select id="ptype${i}" aria-label="Type du joueur ${i + 1}"><option value="h"${s.human ? ' selected' : ''}>Humain</option><option value="b"${s.human ? '' : ' selected'}>Robot</option></select>`;
+      <button class="chip ptype" type="button" id="ptype${i}" aria-label="Type du joueur ${i + 1}">${s.human ? 'Humain' : 'Robot'}</button>`;
     r.querySelector('input').addEventListener('input', (e) => { s.name = e.target.value; });
-    r.querySelector('select').addEventListener('change', (e) => { s.human = e.target.value === 'h'; });
+    r.querySelector('.ptype').addEventListener('click', (e) => { s.human = !s.human; e.currentTarget.textContent = s.human ? 'Humain' : 'Robot'; });
     rows.appendChild(r);
   }
+  const inGame = state.started && !state.over;
+  $('btnResume').hidden = !inGame;
+  $('btnStart').textContent = inGame ? 'Nouvelle partie' : 'Commencer';
 }
 function setSpeed(i) {
   speedIdx = i; store.set('speed', i);
@@ -1396,14 +1419,39 @@ $('countSeg').addEventListener('click', (e) => { const b = e.target.closest('but
 $('speedSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; setSpeed(+b.dataset.s); });
 $('btnSpeed').addEventListener('click', () => setSpeed((speedIdx + 1) % SPEEDS.length));
 $('btnSound').addEventListener('click', (e) => { sfx.unlock(); const on = sfx.toggle(); e.currentTarget.setAttribute('aria-pressed', String(on)); e.currentTarget.textContent = on ? 'Son' : 'Son coupé'; });
-$('btnStart').addEventListener('click', () => { $('setup').hidden = true; newGame(); });
-$('btnNew').addEventListener('click', () => { $('setup').hidden = false; renderSetup(); });
+const overlayIds = ['rulesBox', 'winBox', 'setup'];
+const lastFocus = {};
+function updatePause() { state.paused = state.started && !state.over && (!$('setup').hidden || !$('rulesBox').hidden); }
+function openOverlay(id, focusId) {
+  lastFocus[id] = document.activeElement;
+  $(id).hidden = false;
+  updatePause();
+  const f = $(focusId);
+  if (f) setTimeout(() => f.focus({ preventScroll: true }), 30);
+}
+function closeOverlay(id) {
+  $(id).hidden = true;
+  updatePause();
+  const back = lastFocus[id];
+  if (back && back.offsetParent !== null && !back.disabled) back.focus({ preventScroll: true });
+  else focusDefault();
+}
+function openSetup() { renderSetup(); openOverlay('setup', state.started && !state.over ? 'btnResume' : 'btnStart'); }
+function focusDefault() {
+  const scope = activeScope();
+  const list = focusables(scope);
+  const pick = scope.querySelector('.roll:not(:disabled)') || list[0];
+  if (pick) pick.focus({ preventScroll: true });
+}
+$('btnStart').addEventListener('click', () => { $('setup').hidden = true; updatePause(); newGame(); });
+$('btnResume').addEventListener('click', () => closeOverlay('setup'));
+$('btnNew').addEventListener('click', openSetup);
 $('winAgain').addEventListener('click', () => { $('winBox').hidden = true; newGame(); });
-$('winSetup').addEventListener('click', () => { $('winBox').hidden = true; $('setup').hidden = false; renderSetup(); });
-const openRules = () => { $('rulesBox').hidden = false; };
+$('winSetup').addEventListener('click', () => { $('winBox').hidden = true; openSetup(); });
+const openRules = () => openOverlay('rulesBox', 'rulesClose');
 $('btnRules').addEventListener('click', openRules);
 $('setupRules').addEventListener('click', openRules);
-$('rulesClose').addEventListener('click', () => { $('rulesBox').hidden = true; });
+$('rulesClose').addEventListener('click', () => closeOverlay('rulesBox'));
 $('rulesList').innerHTML = RULES.map(([n, c, t]) => `<li><span class="n" style="background:${c};color:${isDark(c) ? '#f6eedc' : '#1d1405'}">${n}</span><span>${t}</span></li>`).join('');
 $('btnRoll').addEventListener('click', () => { if (cur() && cur().human) playTurn(); });
 $('btnFollow').addEventListener('click', (e) => {
@@ -1411,9 +1459,56 @@ $('btnFollow').addEventListener('click', (e) => {
   e.currentTarget.setAttribute('aria-pressed', String(state.follow));
 });
 $('btnLog').addEventListener('click', (e) => { const on = $('side').classList.toggle('showlog'); e.currentTarget.setAttribute('aria-pressed', String(on)); });
+/* Navigation au clavier et à la télécommande (flèches, OK, Retour) */
+function activeScope() {
+  for (const id of overlayIds) if (!$(id).hidden) return $(id);
+  return document.querySelector('.hud');
+}
+function focusables(scope) {
+  return Array.prototype.filter.call(scope.querySelectorAll('button, input'), (el) => !el.disabled && el.offsetParent !== null);
+}
+function moveFocus(dir) {
+  const scope = activeScope();
+  const list = focusables(scope);
+  if (!list.length) return;
+  const curEl = document.activeElement;
+  if (!curEl || curEl === document.body || !scope.contains(curEl)) { focusDefault(); return; }
+  const r = curEl.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  let best = null, bestScore = Infinity;
+  list.forEach((el) => {
+    if (el === curEl) return;
+    const q = el.getBoundingClientRect();
+    const x = q.left + q.width / 2 - cx, y = q.top + q.height / 2 - cy;
+    const main = dir === 'left' ? -x : dir === 'right' ? x : dir === 'up' ? -y : y;
+    const cross = dir === 'left' || dir === 'right' ? Math.abs(y) : Math.abs(x);
+    if (main <= 4) return;
+    const score = main + cross * 2.5;
+    if (score < bestScore) { bestScore = score; best = el; }
+  });
+  if (best) { best.focus({ preventScroll: true }); if (best.scrollIntoView) best.scrollIntoView({ block: 'nearest' }); }
+}
+// Appelée par l'application Android TV sur la touche Retour ; renvoie false pour quitter l'application.
+window.tvBack = function () {
+  if (!$('rulesBox').hidden) { closeOverlay('rulesBox'); return true; }
+  if (!$('winBox').hidden) return false;
+  if (!$('setup').hidden) return false;
+  openSetup();
+  return true;
+};
+const ARROWS = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Left: 'left', Right: 'right', Up: 'up', Down: 'down' };
 window.addEventListener('keydown', (e) => {
-  if (e.code !== 'Space' || e.target.matches('input, select, button')) return;
-  if (!$('setup').hidden || !$('rulesBox').hidden || !$('winBox').hidden) return;
+  const dir = ARROWS[e.key];
+  if (dir) {
+    if (e.target.matches('input') && (dir === 'left' || dir === 'right')) return;
+    e.preventDefault();
+    moveFocus(dir);
+    return;
+  }
+  if (e.key === 'Escape') { e.preventDefault(); if (!window.tvBack() && !$('setup').hidden && state.started && !state.over) closeOverlay('setup'); return; }
+  const ok = e.code === 'Space' || e.key === 'Enter' || e.keyCode === 13 || e.keyCode === 23;
+  if (!ok || e.target.matches('input, button')) return;
+  if (activeScope() !== document.querySelector('.hud')) return;
   e.preventDefault();
   if (cur() && cur().human) playTurn();
 });
@@ -1580,6 +1675,7 @@ fontsReady.catch(() => {}).then(() => {
   renderSetup();
   renderPlayers();
   frame();
+  $('btnStart').focus({ preventScroll: true });
 });
 })();
 </script>
