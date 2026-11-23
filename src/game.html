@@ -261,14 +261,15 @@ body.tv .roll:focus { transform: scale(1.06); }
 
 /* ================= Règles et données ================= */
 const LAST = 63;
+const STUCK_TRIES = 2; // puits / prison : essais ratés avant de sortir d'office au tour suivant
 const GOOSE = [5, 9, 14, 18, 23, 27, 32, 36, 41, 45, 50, 54, 59];
 const SPECIAL = {
   0:  { name: 'Départ', label: 'DÉPART', color: '#2f6d4f', desc: "Tous les pions partent d'ici." },
   6:  { name: 'Le Pont', label: 'PONT', color: '#9a6b3f', desc: "On traverse le pont jusqu'à la case 12." },
   19: { name: "L'Hôtel", label: 'HÔTEL', color: '#b4507a', desc: 'On se repose : passez 2 tours.' },
-  31: { name: 'Le Puits', label: 'PUITS', color: '#2f7585', desc: "On reste au fond jusqu'à ce qu'un autre joueur tombe dans le puits." },
+  31: { name: 'Le Puits', label: 'PUITS', color: '#2f7585', desc: "Pour sortir : faire un double, ou être délivré par un autre joueur. Au 3e tour, on sort d'office." },
   42: { name: 'Le Labyrinthe', label: 'LABYRINTHE', color: '#6a58a8', desc: 'Perdu ! Retour à la case 30.' },
-  52: { name: 'La Prison', label: 'PRISON', color: '#4d5462', desc: "On attend qu'un autre joueur vienne prendre la place." },
+  52: { name: 'La Prison', label: 'PRISON', color: '#4d5462', desc: "Pour sortir : faire un double, ou être délivré par un autre joueur. Au 3e tour, on sort d'office." },
   58: { name: 'La Mort', label: 'LA MORT', color: '#1c1b21', desc: 'Retour à la case départ.' },
   63: { name: "Le Jardin de l'Oie", label: 'ARRIVÉE', color: '#e8bf55', desc: 'Arrivée. Il faut y tomber pile, sinon on recule du surplus.' },
 };
@@ -291,9 +292,9 @@ const RULES = [
   ['Oie', '#fbf6ea', 'Sur une oie (5, 9, 14, … 59), on avance encore du même nombre de cases.'],
   ['6', SPECIAL[6].color, 'Le Pont : on file à la case 12.'],
   ['19', SPECIAL[19].color, "L'Hôtel : on passe 2 tours."],
-  ['31', SPECIAL[31].color, "Le Puits : bloqué jusqu'à ce qu'un autre joueur y tombe."],
+  ['31', SPECIAL[31].color, "Le Puits : on lance quand même les dés ; un double fait sortir et avancer. Un autre joueur qui tombe dans le puits vous délivre. Au 3e tour, on sort d'office."],
   ['42', SPECIAL[42].color, 'Le Labyrinthe : retour à la case 30.'],
-  ['52', SPECIAL[52].color, "La Prison : bloqué jusqu'à ce qu'un autre joueur y arrive."],
+  ['52', SPECIAL[52].color, 'La Prison : mêmes règles que le puits (double, délivrance ou sortie au 3e tour).'],
   ['58', '#55525e', 'La Mort : retour au départ.'],
   ['1er', PALETTE[0], 'Premier lancer : 6 + 3 envoie en 26, 5 + 4 en 53.'],
   ['⇄', PALETTE[3], "Tomber sur une case occupée renvoie l'autre pion à la case d'où vous venez."],
@@ -1248,7 +1249,7 @@ function renderPlayers() {
     d.className = 'pl' + (i === state.cur && !state.over ? ' active' : '');
     let st = '';
     if (p.skip > 0) st = `À l'hôtel · ${p.skip} tour${p.skip > 1 ? 's' : ''}`;
-    else if (p.stuck) st = p.pos === 31 ? 'Au fond du puits' : 'En prison';
+    else if (p.stuck) st = (p.pos === 31 ? 'Puits' : 'Prison') + ' · double pour sortir · ' + (STUCK_TRIES - p.tries) + ' essai' + (STUCK_TRIES - p.tries > 1 ? 's' : '');
     d.innerHTML = `<span class="dot" style="background:${p.color}"></span>
       <span class="nm">${escapeHtml(p.name)}${p.human ? '' : '<small>robot</small>'}</span>
       <span class="pos">${p.pos}</span>
@@ -1282,7 +1283,7 @@ function newGame() {
   state.players.forEach((p) => scene.remove(p.pawn.root));
   state.players = setup.players.slice(0, setup.count).map((s, i) => ({
     idx: i, name: (s.name || '').trim() || DEFAULT_NAMES[i], human: s.human, color: PLAYER_COLORS[i],
-    pos: 0, skip: 0, stuck: false, rolled: false, pawn: makePawn(PLAYER_COLORS[i]),
+    pos: 0, skip: 0, stuck: false, tries: 0, rolled: false, pawn: makePawn(PLAYER_COLORS[i]),
   }));
   state.players.forEach((p) => { p.pawn.root.position.copy(slotPos(0, p.idx)); p.pawn.root.rotation.y = tilePos[0].rot + Math.PI; });
   state.cur = 0; state.busy = false; state.over = false; state.started = true; state.cine = false;
@@ -1315,7 +1316,7 @@ async function startTurn() {
   await sleep(1000);
   if (gid !== state.gid) return;
   if (state.players.every((q) => q.stuck)) {
-    state.players.forEach((q) => { q.stuck = false; });
+    state.players.forEach((q) => { q.stuck = false; q.tries = 0; });
     log("Tout le monde était bloqué : les portes s'ouvrent.");
     await toast('🗝️', "Les portes s'ouvrent", 'Tout le monde était bloqué, chacun repart.');
     if (gid !== state.gid) return;
@@ -1332,12 +1333,20 @@ async function startTurn() {
   }
   if (p.stuck) {
     state.busy = true; renderPlayers();
-    const where = p.pos === 31 ? 'au fond du puits' : 'en prison';
-    log(`${who(p)} attend ${where}.`);
-    await toast(p.pos === 31 ? '🪣' : '🔒', `${p.name} attend`, `Toujours ${where}. Un autre joueur doit venir prendre la place.`);
+    const well = p.pos === 31;
+    if (p.tries >= STUCK_TRIES) {
+      // sortie d'office : le joueur joue normalement ce tour-ci
+      p.stuck = false; p.tries = 0;
+      log(`${who(p)} sort ${well ? 'du puits' : 'de prison'}.`);
+      sfx.good();
+      fx.sparks(p.pawn.root.position.clone(), 14, '#9fe0ff');
+      await toast(well ? '🪜' : '🔓', `${p.name} est libre`, `Après ${STUCK_TRIES} tours d'attente, ${p.name} sort ${well ? 'du puits' : 'de prison'} et joue.`);
+    } else {
+      await toast(well ? '🪣' : '🔒', `${p.name} tente sa chance`, `Un double pour sortir ${well ? 'du puits' : 'de prison'}. Sinon, sortie d'office dans ${STUCK_TRIES - p.tries} tour${STUCK_TRIES - p.tries > 1 ? 's' : ''}.`, 1800);
+    }
     if (gid !== state.gid) return;
     state.busy = false;
-    return nextPlayer();
+    renderPlayers();
   }
   renderPlayers();
   if (!p.human) {
@@ -1385,6 +1394,27 @@ async function playTurn() {
   p.rolled = true;
   log(`${who(p)} lance ${a} + ${b}.`);
 
+  if (p.stuck) {
+    const well = p.pos === 31;
+    if (a !== b) {
+      p.tries++;
+      log(`${who(p)} reste ${well ? 'au fond du puits' : 'en prison'}.`);
+      sfx.bad();
+      const left = STUCK_TRIES - p.tries;
+      await toast('😩', 'Pas de double', left > 0 ? `Encore un essai au prochain tour.` : `${p.name} sortira d'office au prochain tour.`);
+      if (gid !== state.gid) return;
+      renderPlayers();
+      state.busy = false;
+      return nextPlayer();
+    }
+    p.stuck = false; p.tries = 0;
+    log(`${who(p)} fait un double et sort ${well ? 'du puits' : 'de prison'} !`);
+    sfx.good();
+    fx.sparks(p.pawn.root.position.clone(), 18, '#9fe0ff');
+    await toast('🎉', 'Double !', `${p.name} sort ${well ? 'du puits' : 'de prison'} et avance de ${sum} cases.`);
+    if (gid !== state.gid) return;
+  }
+
   if (first && origin === 0 && a * b === 18) {
     sfx.good();
     await toast('🎲', '6 + 3 au premier lancer', 'Raccourci direct vers la case 26 !');
@@ -1405,7 +1435,7 @@ async function playTurn() {
     const others = state.players.filter((q) => q !== p && q.pos === p.pos);
     for (const q of others) {
       const freed = q.stuck;
-      q.stuck = false; q.skip = 0;
+      q.stuck = false; q.skip = 0; q.tries = 0;
       log(`${who(p)} prend la place de ${who(q)}, qui part en case ${origin}.`);
       sfx.bump();
       addTrauma(0.35);
@@ -1446,8 +1476,8 @@ async function resolve(p, sum, gid) {
       await jumpTo(p, 0, { spin: 3, height: 1.4 });
     }
     else if (i === 19) { p.skip = 2; log(`${who(p)} entre à l'hôtel.`); sfx.sleep(); await toast('🛏️', "L'Hôtel", `${p.name} passe 2 tours à se reposer.`); }
-    else if (i === 31) { p.stuck = true; log(`${who(p)} tombe dans le puits.`); sfx.splash(); fx.dust(p.pawn.root.position.clone(), 10, '#8ec5ff'); await toast('🪣', 'Le Puits', `${p.name} attend qu'un autre joueur tombe à son tour.`); }
-    else if (i === 52) { p.stuck = true; log(`${who(p)} va en prison.`); sfx.bad(); addTrauma(0.3); await toast('🔒', 'La Prison', `${p.name} attend qu'un autre joueur vienne prendre la place.`); }
+    else if (i === 31) { p.stuck = true; p.tries = 0; log(`${who(p)} tombe dans le puits.`); sfx.splash(); fx.dust(p.pawn.root.position.clone(), 10, '#8ec5ff'); await toast('🪣', 'Le Puits', `Pour sortir : un double, ou attendre au plus ${STUCK_TRIES} tours.`); }
+    else if (i === 52) { p.stuck = true; p.tries = 0; log(`${who(p)} va en prison.`); sfx.bad(); addTrauma(0.3); await toast('🔒', 'La Prison', `Pour sortir : un double, ou attendre au plus ${STUCK_TRIES} tours.`); }
     return;
   }
 }

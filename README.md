@@ -19,7 +19,8 @@ Ouvrir `index.html` dans un navigateur (connexion Internet nécessaire pour char
 ## Règles
 
 - Oies (5, 9, 14, 18, 23, 27, 32, 36, 41, 45, 50, 54, 59) : on avance encore du même nombre.
-- 6 Pont → case 12 · 19 Hôtel : 2 tours sans jouer · 31 Puits et 52 Prison : bloqué jusqu'à ce qu'un autre joueur arrive
+- 6 Pont → case 12 · 19 Hôtel : 2 tours sans jouer
+- 31 Puits et 52 Prison : on lance quand même les dés, un double fait sortir et avancer ; un autre joueur qui arrive vous délivre ; après 2 essais ratés on sort d'office au tour suivant
 - 42 Labyrinthe → case 30 · 58 La Mort → retour au départ
 - Premier lancer : 6 + 3 → case 26, 5 + 4 → case 53
 - Tomber sur une case occupée renvoie l'autre pion à la case d'où l'on vient.
