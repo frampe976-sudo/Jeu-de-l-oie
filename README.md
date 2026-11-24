@@ -15,6 +15,7 @@ Le jeu de l'oie traditionnel (63 cases) sur un plateau en spirale en 3D, jouable
 ## Mode compétitif (tout en local)
 
 - **Cartes pouvoirs** : les cases violettes font piocher une carte (3 au maximum). Une carte par tour, avant de lancer : ⚡ Turbo (+3 cases), 🛡️ Bouclier (contre les pièges et les délogements), 🎲 3 dés (on garde les 2 meilleurs), 🔄 Échange (avec le leader), 🧊 Gel (le leader passe son tour). Chaque joueur commence avec une carte.
+- **Duels** : tomber sur une case occupée lance un mini-jeu (🎲 dés, 🎯 réflexe, ⚡ frénésie), jouable avec la seule touche OK. Le gagnant garde la case, le perdant part à la case d'où venait l'attaquant. Un bouclier évite le duel.
 - **Robots** Facile, Normal ou Expert : les robots Expert jouent leurs cartes au meilleur moment.
 - **Trophées et rangs** (Bronze → Légende) : une victoire en rapporte (davantage contre des Expert et en série), une défaite en coûte.
 - **Niveaux, pièces et boutique** : l'expérience et les pièces gagnées à chaque partie débloquent des chapeaux pour son pion.

@@ -186,6 +186,29 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--saffron); o
 .rw-note { font-weight: 800; color: var(--saffron); animation: cardRise .5s cubic-bezier(.34,1.4,.64,1); }
 @media (max-width: 560px) { .prof-grid { grid-template-columns: 1fr; } .shop { grid-template-columns: repeat(2, 1fr); } .rw-row { grid-template-columns: 84px minmax(0,1fr) auto; } }
 
+/* Duels */
+.duelcard { width: min(520px, 100%); text-align: center; }
+.duelcard h2 { margin-top: 8px; }
+.duel-head { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
+.vs { font-family: var(--display); font-weight: 800; font-size: 1.6rem; color: var(--saffron); animation: vsPulse 0.9s ease-in-out infinite; }
+@keyframes vsPulse { 50% { transform: scale(1.15); } }
+.fighter { display: grid; justify-items: center; gap: 2px; padding: 8px; border-radius: 12px; border: 2px solid transparent; background: rgba(255,255,255,0.04); transition: border-color .2s, transform .2s; min-width: 0; }
+.fighter.on { border-color: var(--saffron); transform: scale(1.04); }
+.fighter .dot { width: 16px; height: 16px; border-radius: 50%; }
+.fighter b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.fighter small { color: var(--muted); font-size: 0.75rem; }
+.fighter .sc { font-family: var(--display); font-weight: 800; font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+#duelStage { min-height: 96px; display: grid; align-content: center; gap: 6px; }
+.dd .die { font-size: 4.2rem; line-height: 1; display: inline-block; }
+.die.pop, .mash b.pop { animation: stepPop .25s cubic-bezier(.34,1.56,.64,1); }
+.gauge { position: relative; height: 34px; border-radius: 17px; background: rgba(255,255,255,0.08); overflow: hidden; margin: 6px 4px; }
+.gauge .zone { position: absolute; left: 38%; width: 24%; top: 0; bottom: 0; background: rgba(59,171,106,0.55); }
+.gauge .perfect { position: absolute; left: 48%; width: 4%; top: 0; bottom: 0; background: rgba(140,240,170,0.9); }
+.gauge .cur { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: var(--saffron); border-radius: 3px; box-shadow: 0 0 10px var(--saffron); }
+.mash b { display: block; font-family: var(--display); font-size: 3.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.duel-res { font-family: var(--display); font-weight: 800; font-size: 1.3rem; min-height: 1.6em; margin: 6px 0 0; }
+#duelBtn { min-width: 160px; font-size: 1.2rem; }
+
 /* Télévision : navigation à la télécommande */
 .hint { display: none; font-size: 0.78rem; color: var(--muted); font-weight: 700; line-height: 1.3; }
 body.tv .hint { display: block; }
@@ -319,6 +342,17 @@ body.tv .roll:focus { transform: scale(1.06); }
   </div>
 </div>
 
+<div class="overlay" id="duelBox" hidden>
+  <div class="card duelcard">
+    <div class="duel-head"><div class="fighter" id="dA"></div><div class="vs">VS</div><div class="fighter" id="dB"></div></div>
+    <h2 id="duelTitle">Duel</h2>
+    <p class="lead" id="duelInfo"></p>
+    <div id="duelStage"></div>
+    <p class="duel-res" id="duelRes"></p>
+    <div class="actions"><button class="roll" type="button" id="duelBtn" hidden>OK !</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="profileBox" hidden>
   <div class="card wide">
     <h2 id="profTitle">Profil</h2>
@@ -390,7 +424,7 @@ function rulesList() {
     ['52', SPECIAL[52].color, 'La Prison : mêmes règles que le puits.'],
     ['58', '#55525e', m.deathTo ? `La Mort : recul à la case ${m.deathTo}.` : 'La Mort : retour au départ.'],
     ['1er', PALETTE[0], 'Premier lancer : 6 + 3 envoie en 26, 5 + 4 en 53.'],
-    ['⇄', PALETTE[3], "Tomber sur une case occupée renvoie l'autre pion à la case d'où vous venez."],
+    ['⚔️', PALETTE[3], "Tomber sur une case occupée déclenche un duel (dés, réflexe ou frénésie). Le gagnant garde la case, le perdant part à la case d'où venait l'attaquant. Un bouclier évite le duel."],
     ['✦', '#6d4bc8', 'Cases violettes : on pioche une carte pouvoir (3 au maximum). Une carte par tour, avant de lancer : ⚡ Turbo +3, 🛡️ Bouclier, 🎲 3 dés, 🔄 Échange avec le leader, 🧊 Gel du leader.'],
     ['🏆', '#f2c230', 'Gagner rapporte des trophées (plus contre des robots Expert), perdre en coûte. Les pièces gagnées achètent des chapeaux.'],
     ['63', SPECIAL[63].color, m.exact ? 'Il faut tomber pile : le surplus fait reculer.' : 'Le premier qui atteint ou dépasse la 63 gagne.'],
@@ -609,6 +643,13 @@ const sfx = (() => {
     splash() { noise(0.7, { type: 'lowpass', freq: 2500, vol: 0.35, sweep: 0.15 }); for (let i = 0; i < 5; i++) voice(rand(400, 900), 0.08, { slide: 1.8, vol: 0.06, at: 0.2 + i * rand(0.06, 0.12) }); },
     bump() { voice(320, 0.35, { slide: 0.3, vol: 0.25, vib: 18 }); noise(0.15, { freq: 1200, q: 0.7, vol: 0.25 }); },
     turn(idx) { const base = [76, 79, 74, 81][idx || 0]; voice(midi(base), 0.35, { vol: 0.08, rev: 0.6 }); voice(midi(base + 7), 0.45, { vol: 0.07, at: 0.09, rev: 0.6 }); },
+    duel() {
+      duck(0.25, 1.6);
+      [0, 0.16, 0.32].forEach((at, i) => { voice(110 - i * 10, 0.25, { slide: 0.4, vol: 0.45, at }); noise(0.18, { type: 'lowpass', freq: 900, vol: 0.2, at }); });
+      // choc d'épées
+      noise(0.5, { freq: 5200, q: 8, vol: 0.25, at: 0.5, rev: 0.6 });
+      [1870, 2650, 3420].forEach((f) => voice(f, 0.7, { type: 'triangle', vol: 0.04, at: 0.5, rev: 0.6 }));
+    },
     card() {
       duck(0.5, 0.8);
       [79, 83, 86, 91].forEach((n, i) => voice(midi(n), 0.3, { type: 'triangle', vol: 0.09, at: i * 0.045, rev: 0.6 }));
@@ -1885,6 +1926,173 @@ function botPickCard(p) {
   return null;
 }
 
+/* ================= Duels : mini-jeux quand deux pions se retrouvent sur la même case =================
+   Trois jeux, jouables avec la seule touche OK (télécommande, clavier, clic ou toucher) :
+   dés (le plus fort gagne), réflexe (arrêter le curseur dans la zone verte), frénésie (appuyer le plus vite possible). */
+const DUEL_GAMES = [
+  { id: 'dice',   icon: '🎲', name: 'Duel de dés', info: 'Chacun lance un dé. Le plus fort gagne.' },
+  { id: 'reflex', icon: '🎯', name: 'Réflexe',     info: 'Arrête le curseur au centre de la zone verte avec OK.' },
+  { id: 'mash',   icon: '⚡', name: 'Frénésie',    info: 'Appuie sur OK le plus vite possible pendant 3 secondes.' },
+];
+const DIE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+let duelPress = null; // fonction appelée à chaque appui sur OK pendant un duel
+const duelOpen = () => !$('duelBox').hidden;
+const realSleep = (ms) => new Promise((r) => setTimeout(r, ms));
+function fighterHtml(p, score, label) {
+  return `<span class="dot" style="background:${p.color}"></span><b>${escapeHtml(p.name)}</b><small>${label || (p.human ? '' : 'robot')}</small><span class="sc">${score == null ? '–' : score}</span>`;
+}
+function setFighters(a, b, sa, sb, la, lb) { $('dA').innerHTML = fighterHtml(a, sa, la); $('dB').innerHTML = fighterHtml(b, sb, lb); }
+function setActive(which) { $('dA').classList.toggle('on', which === 0); $('dB').classList.toggle('on', which === 1); }
+// attend un appui sur OK (ou la fin du délai) ; renvoie true si appui
+function waitOk(ms, ignoreFirst) {
+  return new Promise((res) => {
+    let done = false;
+    const start = performance.now();
+    const finish = (v) => { if (done) return; done = true; duelPress = null; clearTimeout(tm); res(v); };
+    // ignore un appui trop précoce (reste d'un appui précédent)
+    duelPress = () => { if (performance.now() - start >= (ignoreFirst || 0)) finish(true); };
+    const tm = setTimeout(() => finish(false), ms);
+  });
+}
+const botSkill = () => [[0.25, 0.8], [0.45, 0.92], [0.62, 0.99]][state.botLevel] || [0.45, 0.92];
+
+async function duelDice(a, b) {
+  const stage = $('duelStage');
+  const scores = [null, null];
+  for (let round = 0; round < 5; round++) {
+    for (let k = 0; k < 2; k++) {
+      const p = k ? b : a;
+      setActive(k);
+      stage.innerHTML = `<div class="dd"><span class="die" id="ddie">🎲</span></div><p class="small">${p.human ? `${escapeHtml(p.name)}, appuie sur OK pour lancer.` : `${escapeHtml(p.name)} lance…`}</p>`;
+      $('duelBtn').hidden = !p.human;
+      if (p.human) await waitOk(8000); else await realSleep(T(500));
+      const v = 1 + Math.floor(Math.random() * 6);
+      const el = $('ddie');
+      for (let i = 0; i < 9; i++) { el.textContent = DIE_FACES[Math.floor(Math.random() * 6)]; sfx.clack(); await realSleep(55 + i * 8); }
+      el.textContent = DIE_FACES[v - 1];
+      el.classList.add('pop');
+      scores[k] = v;
+      setFighters(a, b, scores[0], scores[1]);
+      sfx.pop();
+      await realSleep(T(600));
+    }
+    if (scores[0] !== scores[1]) break;
+    stage.innerHTML = '<p class="big">Égalité ! On relance.</p>';
+    await realSleep(T(900));
+    scores[0] = scores[1] = null; setFighters(a, b, null, null);
+  }
+  return scores[0] > scores[1] ? 0 : 1; // égalité persistante : le défenseur garde sa case
+}
+
+async function duelReflex(a, b) {
+  const stage = $('duelStage');
+  const scores = [null, null];
+  for (let k = 0; k < 2; k++) {
+    const p = k ? b : a;
+    setActive(k);
+    stage.innerHTML = `<div class="gauge"><i class="zone"></i><i class="perfect"></i><b class="cur" id="gcur"></b></div><p class="small" id="ginfo">${p.human ? `${escapeHtml(p.name)} : appuie sur OK au centre de la zone verte !` : `${escapeHtml(p.name)} vise…`}</p>`;
+    $('duelBtn').hidden = !p.human;
+    await realSleep(500);
+    const cur = $('gcur');
+    const period = 1100; // aller-retour complet en 1,1 s
+    const t0 = performance.now();
+    let pos = 0, running = true;
+    (function anim(now) {
+      if (!running) return;
+      const ph = ((now - t0) % period) / period;
+      pos = (ph < 0.5 ? ph * 2 : 2 - ph * 2) * 100;
+      cur.style.left = pos + '%';
+      requestAnimationFrame(anim);
+    })(t0);
+    let stopAt;
+    if (p.human) { await waitOk(6000, 350); stopAt = pos; }
+    else {
+      const [lo, hi] = botSkill();
+      const quality = lo + Math.random() * (hi - lo);
+      const target = 50 + (Math.random() < 0.5 ? -1 : 1) * (1 - quality) * 50;
+      // le robot « vise » un moment puis s'arrête sur sa cible (indépendant de la fluidité de l'image)
+      await realSleep(900 + Math.random() * 1400);
+      stopAt = target;
+    }
+    running = false;
+    cur.style.left = stopAt + '%';
+    const sc = Math.max(0, Math.round(100 - Math.abs(stopAt - 50) * 2));
+    scores[k] = sc;
+    setFighters(a, b, scores[0], scores[1]);
+    $('ginfo').textContent = sc >= 95 ? 'Parfait !' : sc >= 80 ? 'Très bien !' : sc >= 60 ? 'Pas mal.' : 'Raté…';
+    if (sc >= 80) sfx.good(); else sfx.pop();
+    await realSleep(T(900));
+  }
+  return scores[0] > scores[1] ? 0 : 1;
+}
+
+async function duelMash(a, b) {
+  const stage = $('duelStage');
+  const scores = [null, null];
+  const DUR = 3000;
+  for (let k = 0; k < 2; k++) {
+    const p = k ? b : a;
+    setActive(k);
+    $('duelBtn').hidden = !p.human;
+    stage.innerHTML = `<div class="mash"><b id="mcount">0</b><div class="meter"><i id="mbar" style="width:100%"></i></div></div><p class="small" id="minfo">${p.human ? `${escapeHtml(p.name)}, prêt ?` : `${escapeHtml(p.name)} se prépare…`}</p>`;
+    for (const n of ['3', '2', '1']) { $('mcount').textContent = n; sfx.coin(); await realSleep(450); }
+    $('mcount').textContent = '0';
+    $('minfo').textContent = p.human ? 'Appuie, appuie, appuie !' : `${p.name} tape comme un fou…`;
+    let count = 0;
+    const t0 = performance.now();
+    const bump = () => { count++; const el = $('mcount'); if (el) { el.textContent = count; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } if (count % 2) sfx.coin(); };
+    if (p.human) duelPress = bump;
+    let botNext = t0;
+    const [lo, hi] = botSkill();
+    const botRate = 4 + (lo + Math.random() * (hi - lo)) * 4.5; // appuis par seconde
+    while (performance.now() - t0 < DUR) {
+      const now = performance.now();
+      $('mbar').style.width = Math.max(0, 100 - (now - t0) / DUR * 100) + '%';
+      while (!p.human && now >= botNext && botNext - t0 < DUR) { bump(); botNext += 1000 / botRate * (0.7 + Math.random() * 0.6); }
+      await realSleep(16);
+    }
+    duelPress = null;
+    scores[k] = count;
+    setFighters(a, b, scores[0], scores[1]);
+    $('minfo').textContent = `${count} appuis !`;
+    sfx.pop();
+    await realSleep(T(900));
+  }
+  return scores[0] > scores[1] ? 0 : 1;
+}
+
+// Lance un duel entre l'attaquant et le défenseur ; renvoie le gagnant
+async function runDuel(att, def) {
+  const game = DUEL_GAMES[Math.floor(Math.random() * DUEL_GAMES.length)];
+  const fast = !att.human && !def.human;
+  sfx.duel();
+  addTrauma(0.3);
+  emote(att, '⚔️'); emote(def, '⚔️');
+  $('duelTitle').innerHTML = `${game.icon} ${game.name}`;
+  $('duelInfo').textContent = game.info;
+  $('duelStage').innerHTML = '';
+  $('duelRes').textContent = '';
+  setFighters(att, def, null, null, 'attaque', 'défend');
+  setActive(-1);
+  $('duelBtn').hidden = true;
+  openOverlay('duelBox', 'duelBtn');
+  const keep = botPace;
+  if (fast) botPace = 0.5;
+  await realSleep(T(fast ? 700 : 1300));
+  const w = game.id === 'dice' ? await duelDice(att, def) : game.id === 'reflex' ? await duelReflex(att, def) : await duelMash(att, def);
+  const winner = w === 0 ? att : def;
+  setActive(w);
+  $('duelBtn').hidden = true;
+  $('duelRes').innerHTML = `<span style="color:${winner.color}">${escapeHtml(winner.name)}</span> remporte le duel !`;
+  sfx.good();
+  fx.confetti(winner.pawn.root.position.clone().add(new THREE.Vector3(0, 0.6, 0)), 30, 0.7);
+  emote(winner, '😤');
+  await realSleep(T(1400));
+  botPace = keep;
+  closeOverlay('duelBox');
+  return winner;
+}
+
 /* ================= Déroulement ================= */
 function newGame() {
   sfx.unlock();
@@ -2124,17 +2332,21 @@ async function playTurn() {
         if (gid !== state.gid) return;
         continue;
       }
-      p.stats.bumps++;
-      const freed = q.stuck;
-      q.stuck = false; q.skip = 0; q.tries = 0;
-      log(`${who(p)} prend la place de ${who(q)}, qui part en case ${origin}.`);
+      log(`${who(p)} défie ${who(q)} en duel sur la case ${p.pos}.`);
+      const winner = await runDuel(p, q);
+      if (gid !== state.gid) return;
+      const loser = winner === p ? q : p;
+      winner.stats.bumps++;
+      const freed = loser === q && q.stuck;
+      loser.stuck = false; loser.skip = 0; loser.tries = 0;
+      log(`${who(winner)} gagne le duel, ${who(loser)} part en case ${origin}.`);
       sfx.bump();
       addTrauma(0.35);
-      emote(q, freed ? '🥳' : '😠');
-      fx.sparks(q.pawn.root.position.clone(), 12, freed ? '#9fe0ff' : '#ffd36b');
-      await toast(freed ? '🔓' : '💥', freed ? `${q.name} est libre` : 'Place prise !', `${q.name} part en case ${origin}.`);
+      emote(loser, freed ? '🥳' : '😠');
+      fx.sparks(loser.pawn.root.position.clone(), 12, freed ? '#9fe0ff' : '#ffd36b');
+      await jumpTo(loser, origin, { spin: 2, height: 1.2 });
       if (gid !== state.gid) return;
-      await jumpTo(q, origin, { spin: 2, height: 1.2 });
+      if (loser === p) break; // l'attaquant a perdu : il quitte la case
     }
   }
   if (gid !== state.gid) return;
@@ -2342,6 +2554,9 @@ const openProfile = () => { renderProfile(); openOverlay('profileBox', 'profClos
 $('btnProfile').addEventListener('click', openProfile);
 $('btnProfile2').addEventListener('click', openProfile);
 $('profClose').addEventListener('click', () => closeOverlay('profileBox'));
+// clic ou toucher sur le bouton du duel (les appuis clavier passent par keydown)
+$('duelBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); if (duelPress) duelPress(); });
+$('duelBtn').addEventListener('click', (e) => e.preventDefault());
 $('hand').addEventListener('click', (e) => {
   const b = e.target.closest('.cardbtn'); const p = cur();
   if (!b || !p || !p.human) return;
@@ -2349,7 +2564,7 @@ $('hand').addEventListener('click', (e) => {
 });
 $('btnSpeed').addEventListener('click', () => setSpeed((speedIdx + 1) % SPEEDS.length));
 $('btnSound').addEventListener('click', (e) => { sfx.unlock(); const on = sfx.toggle(); e.currentTarget.setAttribute('aria-pressed', String(on)); e.currentTarget.textContent = on ? 'Son' : 'Son coupé'; });
-const overlayIds = ['rulesBox', 'profileBox', 'winBox', 'setup'];
+const overlayIds = ['duelBox', 'rulesBox', 'profileBox', 'winBox', 'setup'];
 const lastFocus = {};
 function updatePause() { state.paused = state.started && !state.over && (!$('setup').hidden || !$('rulesBox').hidden || !$('profileBox').hidden); }
 function openOverlay(id, focusId) {
@@ -2427,6 +2642,7 @@ function moveFocus(dir) {
 }
 // Appelée par l'application Android TV sur la touche Retour ; renvoie false pour quitter l'application.
 window.tvBack = function () {
+  if (duelOpen()) return true; // pas d'abandon en plein duel
   if (!$('rulesBox').hidden) { closeOverlay('rulesBox'); return true; }
   if (!$('profileBox').hidden) { closeOverlay('profileBox'); return true; }
   if (!$('winBox').hidden) return false;
@@ -2436,6 +2652,12 @@ window.tvBack = function () {
 };
 const ARROWS = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Left: 'left', Right: 'right', Up: 'up', Down: 'down' };
 window.addEventListener('keydown', (e) => {
+  if (duelOpen()) {
+    const okKey = e.code === 'Space' || e.key === 'Enter' || e.keyCode === 13 || e.keyCode === 23;
+    if (okKey || ARROWS[e.key]) e.preventDefault();
+    if (okKey && !e.repeat && duelPress) duelPress();
+    return;
+  }
   const dir = ARROWS[e.key];
   if (dir) {
     if (e.target.matches('input') && (dir === 'left' || dir === 'right')) return;
