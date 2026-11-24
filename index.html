@@ -131,6 +131,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--saffron); o
 .seg { display: flex; gap: 6px; margin-bottom: 18px; }
 .seg button { flex: 1; background: transparent; border: 1px solid var(--line); color: var(--ivory); border-radius: 10px; padding: 9px; font-family: var(--display); font-weight: 800; font-size: 1rem; }
 .seg button[aria-pressed="true"] { background: var(--saffron); color: #1d1405; border-color: var(--saffron); }
+.opts { display: grid; grid-template-columns: 1fr 1.4fr; gap: 0 14px; margin-top: 14px; }
+.opts .seg { margin-bottom: 0; }
+.opts .seg button { font-size: 0.9rem; padding: 8px 4px; }
+@media (max-width: 460px) { .opts { grid-template-columns: 1fr; gap: 12px; } }
 .prow { display: grid; grid-template-columns: 16px minmax(0,1fr) auto; gap: 10px; align-items: center; margin-bottom: 8px; }
 .prow .dot { width: 16px; height: 16px; border-radius: 50%; }
 .prow input { background: rgba(255,255,255,0.05); border: 1px solid var(--line); color: var(--ivory); border-radius: 8px; padding: 9px 10px; font: inherit; min-width: 0; }
@@ -186,8 +190,9 @@ body.tv .roll:focus { transform: scale(1.06); }
     <div class="tools" id="tools">
       <button class="chip" id="btnRules" type="button">Règles</button>
       <button class="chip" id="btnNew" type="button">Nouvelle partie</button>
-      <button class="chip" id="btnSpeed" type="button">Vitesse : normale</button>
+      <button class="chip" id="btnSpeed" type="button">Animations : normales</button>
       <button class="chip" id="btnSound" type="button" aria-pressed="true">Son</button>
+      <button class="chip" id="btnMusic" type="button" aria-pressed="true">Musique</button>
       <button class="chip" id="btnQuality" type="button">Qualité : auto</button>
       <button class="chip" id="btnFollow" type="button" aria-pressed="true">Caméra auto</button>
       <button class="chip" id="btnLog" type="button" aria-pressed="false">Journal</button>
@@ -214,7 +219,7 @@ body.tv .roll:focus { transform: scale(1.06); }
 <div class="overlay" id="setup">
   <div class="card">
     <h2>Une partie de <span>l'Oie</span></h2>
-    <p class="lead">63 cases en spirale, deux dés et quelques oies bien placées. Le premier qui tombe pile sur la case 63 gagne.</p>
+    <p class="lead">63 cases en spirale, deux dés et quelques oies bien placées. Le premier qui atteint la case 63 gagne.</p>
     <div class="lbl">Nombre de joueurs</div>
     <div class="seg" id="countSeg">
       <button type="button" data-n="2">2</button>
@@ -223,11 +228,22 @@ body.tv .roll:focus { transform: scale(1.06); }
     </div>
     <div class="lbl">Joueurs</div>
     <div id="setupRows"></div>
-    <div class="lbl" style="margin-top:14px">Vitesse du jeu</div>
-    <div class="seg" id="speedSeg">
-      <button type="button" data-s="0">Lente</button>
-      <button type="button" data-s="1" aria-pressed="true">Normale</button>
-      <button type="button" data-s="2">Rapide</button>
+    <div class="opts">
+      <div>
+        <div class="lbl">Durée de partie</div>
+        <div class="seg" id="modeSeg">
+          <button type="button" data-m="rapide" aria-pressed="true">Rapide</button>
+          <button type="button" data-m="classique">Classique</button>
+        </div>
+      </div>
+      <div>
+        <div class="lbl">Animations</div>
+        <div class="seg" id="speedSeg">
+          <button type="button" data-s="0">Lentes</button>
+          <button type="button" data-s="1" aria-pressed="true">Normales</button>
+          <button type="button" data-s="2">Vives</button>
+        </div>
+      </div>
     </div>
     <div class="actions">
       <button class="chip" type="button" id="setupRules">Lire les règles</button>
@@ -266,7 +282,13 @@ body.tv .roll:focus { transform: scale(1.06); }
 
 /* ================= Règles et données ================= */
 const LAST = 63;
-const STUCK_TRIES = 2; // puits / prison : essais ratés avant de sortir d'office au tour suivant
+/* Durée de partie : « rapide » raccourcit les pénalités et l'arrivée n'exige plus de tomber pile. */
+const MODES = {
+  rapide:    { label: 'rapide',    hotel: 1, tries: 1, deathTo: 38, exact: false },
+  classique: { label: 'classique', hotel: 2, tries: 2, deathTo: 0,  exact: true },
+};
+let gameMode = 'rapide';
+const RM = () => MODES[gameMode] || MODES.rapide;
 const GOOSE = [5, 9, 14, 18, 23, 27, 32, 36, 41, 45, 50, 54, 59];
 const SPECIAL = {
   0:  { name: 'Départ', label: 'DÉPART', color: '#2f6d4f', desc: "Tous les pions partent d'ici." },
@@ -289,35 +311,49 @@ const PLAYER_COLORS = ['#e2483a', '#3f7de0', '#f2c230', '#3bab6a'];
 const DEFAULT_NAMES = ['Joueur 1', 'Marguerite', 'Gaston', 'Pétronille'];
 
 function tileInfo(i) {
-  if (SPECIAL[i]) return SPECIAL[i];
+  const m = RM();
+  const tries = m.tries === 1 ? 'au tour suivant' : `au ${m.tries + 1}e tour`;
+  const dyn = {
+    19: `On se repose : passez ${m.hotel} tour${m.hotel > 1 ? 's' : ''}.`,
+    31: `Pour sortir : faire un double, ou être délivré par un autre joueur. Sinon, on sort d'office ${tries}.`,
+    52: `Pour sortir : faire un double, ou être délivré par un autre joueur. Sinon, on sort d'office ${tries}.`,
+    58: m.deathTo ? `On recule à la case ${m.deathTo}.` : 'Retour à la case départ.',
+    63: m.exact ? 'Arrivée. Il faut y tomber pile, sinon on recule du surplus.' : 'Arrivée. Le premier qui l’atteint ou la dépasse gagne.',
+  };
+  if (SPECIAL[i]) return dyn[i] ? Object.assign({}, SPECIAL[i], { desc: dyn[i] }) : SPECIAL[i];
   if (GOOSE.includes(i)) return GOOSE_INFO;
   return { name: 'Case ' + i, desc: EXTRA[i] || 'Case ordinaire.' };
 }
-const RULES = [
-  ['Oie', '#fbf6ea', 'Sur une oie (5, 9, 14, … 59), on avance encore du même nombre de cases.'],
-  ['6', SPECIAL[6].color, 'Le Pont : on file à la case 12.'],
-  ['19', SPECIAL[19].color, "L'Hôtel : on passe 2 tours."],
-  ['31', SPECIAL[31].color, "Le Puits : on lance quand même les dés ; un double fait sortir et avancer. Un autre joueur qui tombe dans le puits vous délivre. Au 3e tour, on sort d'office."],
-  ['42', SPECIAL[42].color, 'Le Labyrinthe : retour à la case 30.'],
-  ['52', SPECIAL[52].color, 'La Prison : mêmes règles que le puits (double, délivrance ou sortie au 3e tour).'],
-  ['58', '#55525e', 'La Mort : retour au départ.'],
-  ['1er', PALETTE[0], 'Premier lancer : 6 + 3 envoie en 26, 5 + 4 en 53.'],
-  ['⇄', PALETTE[3], "Tomber sur une case occupée renvoie l'autre pion à la case d'où vous venez."],
-  ['63', SPECIAL[63].color, 'Il faut tomber pile : le surplus fait reculer.'],
-];
+function rulesList() {
+  const m = RM();
+  return [
+    ['Oie', '#fbf6ea', 'Sur une oie (5, 9, 14, … 59), on avance encore du même nombre de cases.'],
+    ['6', SPECIAL[6].color, 'Le Pont : on file à la case 12.'],
+    ['19', SPECIAL[19].color, `L'Hôtel : on passe ${m.hotel} tour${m.hotel > 1 ? 's' : ''}.`],
+    ['31', SPECIAL[31].color, `Le Puits : on lance quand même les dés, un double fait sortir et avancer. Un autre joueur qui tombe dans le puits vous délivre. Après ${m.tries} essai${m.tries > 1 ? 's' : ''} raté${m.tries > 1 ? 's' : ''}, on sort d'office.`],
+    ['42', SPECIAL[42].color, 'Le Labyrinthe : retour à la case 30.'],
+    ['52', SPECIAL[52].color, 'La Prison : mêmes règles que le puits.'],
+    ['58', '#55525e', m.deathTo ? `La Mort : recul à la case ${m.deathTo}.` : 'La Mort : retour au départ.'],
+    ['1er', PALETTE[0], 'Premier lancer : 6 + 3 envoie en 26, 5 + 4 en 53.'],
+    ['⇄', PALETTE[3], "Tomber sur une case occupée renvoie l'autre pion à la case d'où vous venez."],
+    ['63', SPECIAL[63].color, m.exact ? 'Il faut tomber pile : le surplus fait reculer.' : 'Le premier qui atteint ou dépasse la 63 gagne.'],
+  ];
+}
 
 /* ================= Réglages et outils ================= */
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const TV = /[?&]tv=1/.test(location.search);
 if (TV) document.body.classList.add('tv');
-const SPEEDS = [{ f: 1.45, label: 'lente' }, { f: 1, label: 'normale' }, { f: 0.55, label: 'rapide' }];
+const SPEEDS = [{ f: 1.45, label: 'lentes' }, { f: 1, label: 'normales' }, { f: 0.6, label: 'vives' }];
 const store = {
   get(k, d) { try { const v = localStorage.getItem('oie3d.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('oie3d.' + k, JSON.stringify(v)); } catch (e) { /* stockage indisponible */ } },
 };
 let speedIdx = store.get('speed', 1);
 if (!SPEEDS[speedIdx]) speedIdx = 1;
-const T = (ms) => ms * SPEEDS[speedIdx].f * (reduceMotion ? 0.6 : 1);
+gameMode = MODES[store.get('mode', 'rapide')] ? store.get('mode', 'rapide') : 'rapide';
+let botPace = 1; // les tours des robots vont plus vite
+const T = (ms) => ms * SPEEDS[speedIdx].f * botPace * (reduceMotion ? 0.6 : 1);
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, T(ms)));
 function tween(ms, fn) {
@@ -338,75 +374,191 @@ const easeOutElastic = (t) => t === 0 || t === 1 ? t : Math.pow(2, -10 * t) * Ma
 const rand = (a, b) => a + Math.random() * (b - a);
 const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/* ================= Sons (synthétisés, Web Audio) ================= */
+/* ================= Sons et musique (synthétisés, Web Audio) =================
+   Bus : effets → réverbération ; musique générée (basse, accords, mélodie, percussions) → écho.
+   La musique baisse automatiquement pendant les effets importants. */
 const sfx = (() => {
-  let ctx = null, master = null, on = store.get('sound', true);
+  let ctx = null, master = null, sfxBus = null, musicBus = null, revSend = null, musicSend = null, nb = null;
+  let on = store.get('sound', true), musicOn = store.get('music', true);
+  const MUSIC_VOL = 0.2;
+  const midi = (n) => 440 * Math.pow(2, (n - 69) / 12);
+  function gainNode(v, to) { const g = ctx.createGain(); g.gain.value = v; if (to) g.connect(to); return g; }
+  function impulse(sec, decay) {
+    const len = Math.floor(ctx.sampleRate * sec), b = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay); }
+    return b;
+  }
   function ensure() {
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return ctx; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
     ctx = new AC();
-    master = ctx.createGain();
-    master.gain.value = on ? 0.55 : 0;
     const comp = ctx.createDynamicsCompressor();
-    master.connect(comp); comp.connect(ctx.destination);
+    comp.threshold.value = -14; comp.ratio.value = 4;
+    comp.connect(ctx.destination);
+    master = gainNode(on ? 0.85 : 0, comp);
+    sfxBus = gainNode(1, master);
+    musicBus = gainNode(musicOn ? MUSIC_VOL : 0, master);
+    const rev = ctx.createConvolver(); rev.buffer = impulse(2.4, 3.2);
+    revSend = gainNode(1); revSend.connect(rev); rev.connect(gainNode(0.32, master));
+    // écho rythmé pour la musique (croche pointée)
+    const delay = ctx.createDelay(1.5); delay.delayTime.value = (60 / BPM) * 0.75;
+    const fb = gainNode(0.28); delay.connect(fb); fb.connect(delay);
+    musicSend = gainNode(0.22); musicSend.connect(delay); delay.connect(musicBus);
+    musicSend.connect(revSend);
+    const b = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    nb = b;
+    startMusic();
     return ctx;
   }
-  function noiseBuf() {
-    const b = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
-    const d = b.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    return b;
-  }
-  let nb = null;
-  function tone(freq, dur, { type = 'sine', vol = 0.3, at = 0, slide = 0, attack = 0.005 } = {}) {
+  // Une note : oscillateur + enveloppe, filtre passe-bas facultatif, envoi en réverbération
+  function voice(freq, dur, o = {}) {
     if (!ctx || !on) return;
-    const t = ctx.currentTime + at;
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = type; o.frequency.setValueAtTime(freq, t);
-    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq * slide), t + dur);
+    const t = (o.time != null ? o.time : ctx.currentTime) + (o.at || 0);
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    if (o.detune) osc.detune.value = o.detune;
+    if (o.slide) osc.frequency.exponentialRampToValueAtTime(Math.max(20, freq * o.slide), t + (o.slideT || dur));
+    if (o.vib) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = o.vib; lg.gain.value = freq * 0.03; l.connect(lg); lg.connect(osc.frequency); l.start(t); l.stop(t + dur + 0.1); }
+    const atk = o.attack || 0.005;
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(o.vol || 0.2, t + atk);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(master);
-    o.start(t); o.stop(t + dur + 0.05);
+    let out = g;
+    if (o.lp) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(o.lp, t); if (o.lpTo) f.frequency.exponentialRampToValueAtTime(o.lpTo, t + dur); f.Q.value = o.q || 0.7; g.connect(f); out = f; }
+    osc.connect(g);
+    const bus = o.music ? musicBus : sfxBus;
+    out.connect(bus);
+    if (o.rev) { const s = gainNode(o.rev); out.connect(s); s.connect(o.music ? musicSend : revSend); }
+    osc.start(t); osc.stop(t + dur + 0.05);
   }
-  function noise(dur, { freq = 2000, q = 1, vol = 0.3, at = 0, type = 'bandpass', sweep = 0 } = {}) {
+  function noise(dur, o = {}) {
     if (!ctx || !on) return;
-    if (!nb) nb = noiseBuf();
-    const t = ctx.currentTime + at;
-    const s = ctx.createBufferSource(); s.buffer = nb;
-    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
-    if (sweep) f.frequency.exponentialRampToValueAtTime(freq * sweep, t + dur);
+    const t = (o.time != null ? o.time : ctx.currentTime) + (o.at || 0);
+    const src = ctx.createBufferSource(); src.buffer = nb;
+    const f = ctx.createBiquadFilter(); f.type = o.type || 'bandpass'; f.frequency.setValueAtTime(o.freq || 2000, t); f.Q.value = o.q || 1;
+    if (o.sweep) f.frequency.exponentialRampToValueAtTime((o.freq || 2000) * o.sweep, t + dur);
     const g = ctx.createGain();
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    s.connect(f); f.connect(g); g.connect(master);
-    s.start(t, Math.random() * 0.3); s.stop(t + dur + 0.05);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(o.vol || 0.2, t + (o.attack || 0.003));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g);
+    g.connect(o.music ? musicBus : sfxBus);
+    if (o.rev) { const s = gainNode(o.rev); g.connect(s); s.connect(revSend); }
+    src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.05);
   }
+  function duck(level, sec) {
+    if (!ctx || !musicOn) return;
+    const g = musicBus.gain, t = ctx.currentTime;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(MUSIC_VOL * level, t + 0.08);
+    g.linearRampToValueAtTime(MUSIC_VOL, t + sec);
+  }
+
+  /* ---------- Musique générative : fa majeur, 104 battements par minute ---------- */
+  const BPM = 104, EIGHTH = 60 / BPM / 2;
+  const PROG = [[53, [65, 69, 72]], [50, [65, 69, 74]], [46, [65, 70, 74]], [48, [64, 67, 72]]]; // Fa, Rém, Si♭, Do
+  const PENTA = [65, 67, 69, 72, 74, 77, 79, 81];
+  let timer = null, nextT = 0, step = 0, melIdx = 3, mood = 'calm';
+  function scheduleStep(t) {
+    const bar = Math.floor(step / 8), e = step % 8;
+    const [root, chord] = PROG[bar % 4];
+    const full = mood === 'play';
+    const section = Math.floor(bar / 8) % 2; // alternance de couplets
+    // basse
+    if (e === 0 || e === 3 || e === 4 || (full && e === 6)) {
+      const n = e === 3 ? root + 7 : e === 6 ? root + 12 : root;
+      voice(midi(n - 12), EIGHTH * (e === 0 ? 1.8 : 0.9), { type: 'triangle', vol: 0.32, music: true, lp: 600, time: t });
+    }
+    // accords (contretemps)
+    if (e === 2 || e === 6 || (!full && e === 4)) chord.forEach((n, i) => voice(midi(n), EIGHTH * 1.3, { type: 'triangle', vol: 0.05, music: true, lp: 2200, time: t, at: i * 0.008, rev: 0.4 }));
+    // mélodie (marche aléatoire dans la gamme pentatonique)
+    if (full && (bar % 8) < 7) {
+      const p = e % 2 === 0 ? 0.62 : 0.32;
+      if (Math.random() < p) {
+        melIdx = Math.max(0, Math.min(PENTA.length - 1, melIdx + [-2, -1, -1, 1, 1, 2][Math.floor(Math.random() * 6)]));
+        const n = PENTA[melIdx] + (section ? 12 : 0);
+        voice(midi(n), EIGHTH * 1.6, { type: 'triangle', vol: 0.11, music: true, time: t, rev: 0.5 });
+        voice(midi(n + 12), EIGHTH * 0.8, { type: 'sine', vol: 0.04, music: true, time: t });
+      }
+    }
+    // percussions
+    if (full) {
+      noise(0.05, { type: 'highpass', freq: 7000, vol: e % 2 ? 0.07 : 0.035, music: true, time: t });
+      if (e === 0 || e === 4) voice(150, 0.2, { slide: 0.3, slideT: 0.12, vol: 0.5, music: true, time: t });
+      if ((e === 2 || e === 6) && bar % 2) noise(0.12, { freq: 1800, q: 0.8, vol: 0.12, music: true, time: t });
+    }
+    step++;
+  }
+  function startMusic() {
+    if (!ctx || timer) return;
+    nextT = ctx.currentTime + 0.1;
+    timer = setInterval(() => {
+      if (!ctx || !musicOn || !on) return;
+      while (nextT < ctx.currentTime + 0.25) { scheduleStep(nextT); nextT += EIGHTH; }
+      if (nextT < ctx.currentTime) nextT = ctx.currentTime + 0.05; // rattrapage après une pause
+    }, 60);
+  }
+
+  const PENTA_STEPS = [0, 2, 4, 7, 9];
   return {
     unlock: ensure,
     get on() { return on; },
-    toggle() { on = !on; store.set('sound', on); if (master) master.gain.value = on ? 0.55 : 0; return on; },
-    hop(k) { const f = 420 + Math.min(k, 14) * 28; tone(f, 0.12, { type: 'triangle', vol: 0.22, slide: 0.6 }); noise(0.04, { freq: 1800, q: 2, vol: 0.12 }); },
-    land() { tone(150, 0.22, { type: 'sine', vol: 0.4, slide: 0.5 }); noise(0.08, { freq: 900, q: 1.5, vol: 0.18 }); },
-    clack() { noise(0.05, { freq: rand(2500, 4200), q: 4, vol: 0.32 }); tone(rand(900, 1400), 0.04, { type: 'square', vol: 0.05 }); },
-    shake() { for (let i = 0; i < 7; i++) noise(0.04, { freq: rand(2500, 4500), q: 5, vol: 0.18, at: i * 0.045 }); },
-    whoosh() { noise(0.55, { freq: 400, q: 0.8, vol: 0.25, sweep: 6, type: 'bandpass' }); },
+    get musicOn() { return musicOn; },
+    toggle() { on = !on; store.set('sound', on); if (master) master.gain.value = on ? 0.85 : 0; return on; },
+    toggleMusic() { musicOn = !musicOn; store.set('music', musicOn); if (musicBus) { musicBus.gain.cancelScheduledValues(ctx.currentTime); musicBus.gain.value = musicOn ? MUSIC_VOL : 0; } return musicOn; },
+    setMood(m) { mood = m; },
+    // pas : notes montantes de la gamme pentatonique + petit « toc » de bois
+    hop(k) {
+      const n = 72 + PENTA_STEPS[k % 5] + 12 * Math.floor(k / 5);
+      voice(midi(Math.min(n, 96)), 0.18, { type: 'triangle', vol: 0.16, rev: 0.25 });
+      voice(midi(Math.min(n, 96) + 12), 0.08, { type: 'sine', vol: 0.05 });
+      voice(900, 0.05, { slide: 0.35, vol: 0.1 });
+      noise(0.03, { freq: 2500, q: 3, vol: 0.06 });
+    },
+    land() { voice(170, 0.28, { slide: 0.35, vol: 0.45 }); noise(0.12, { type: 'lowpass', freq: 700, vol: 0.2 }); voice(midi(84), 0.4, { vol: 0.05, rev: 0.6 }); },
+    clack() { noise(0.05, { freq: rand(2500, 4500), q: 6, vol: 0.32, rev: 0.25 }); voice(rand(1100, 1600), 0.03, { type: 'square', vol: 0.03 }); },
+    shake() { for (let i = 0; i < 8; i++) noise(0.035, { freq: rand(2800, 5000), q: 7, vol: 0.16, at: i * 0.035 + rand(0, 0.01) }); },
+    pop() { voice(520, 0.12, { slide: 2.2, slideT: 0.08, vol: 0.18, rev: 0.3 }); voice(midi(88), 0.25, { vol: 0.05, at: 0.06, rev: 0.5 }); },
+    whoosh() { noise(0.6, { freq: 300, q: 1.2, vol: 0.28, sweep: 10, attack: 0.15 }); voice(200, 0.5, { slide: 3, vol: 0.05, attack: 0.1 }); },
     honk() {
-      [0, 0.22].forEach((at, k) => {
-        tone(k ? 330 : 300, 0.2, { type: 'sawtooth', vol: 0.13, at, slide: k ? 0.8 : 1.15, attack: 0.02 });
-        tone(k ? 660 : 600, 0.2, { type: 'square', vol: 0.04, at, slide: 0.9, attack: 0.02 });
+      duck(0.4, 1);
+      [[0, 360, 1.12], [0.24, 400, 0.78]].forEach(([at, f, sl]) => {
+        voice(f, 0.22, { type: 'sawtooth', vol: 0.16, at, slide: sl, attack: 0.02, lp: 1400, q: 4, vib: 28 });
+        voice(f * 0.5, 0.22, { type: 'square', vol: 0.05, at, slide: sl, attack: 0.02, lp: 600 });
       });
     },
-    good() { [523, 659, 784].forEach((f, i) => tone(f, 0.28, { type: 'triangle', vol: 0.2, at: i * 0.09 })); },
-    bad() { [392, 330, 262, 196].forEach((f, i) => tone(f, 0.36, { type: 'triangle', vol: 0.22, at: i * 0.16 })); tone(80, 0.9, { type: 'sine', vol: 0.3, at: 0.1, slide: 0.6 }); },
-    sleep() { tone(220, 0.6, { type: 'sine', vol: 0.15, slide: 0.8, attack: 0.2 }); tone(196, 0.8, { type: 'sine', vol: 0.12, at: 0.5, slide: 0.8, attack: 0.2 }); },
-    splash() { noise(0.7, { freq: 600, q: 0.6, vol: 0.3, sweep: 0.3, type: 'lowpass' }); tone(500, 0.3, { type: 'sine', vol: 0.15, slide: 0.3 }); },
-    bump() { tone(110, 0.25, { type: 'square', vol: 0.15, slide: 0.5 }); noise(0.15, { freq: 1200, q: 0.7, vol: 0.3 }); },
-    turn() { tone(660, 0.12, { type: 'sine', vol: 0.12 }); tone(880, 0.18, { type: 'sine', vol: 0.12, at: 0.08 }); },
+    good() {
+      duck(0.35, 1.1);
+      [72, 76, 79, 84].forEach((n, i) => { voice(midi(n), 0.45, { type: 'triangle', vol: 0.15, at: i * 0.075, rev: 0.5 }); voice(midi(n + 12), 0.3, { vol: 0.05, at: i * 0.075 }); });
+      for (let i = 0; i < 5; i++) voice(midi(PENTA[Math.floor(rand(3, 8))] + 24), 0.12, { vol: 0.03, at: 0.32 + i * 0.05, rev: 0.7 });
+    },
+    bad() {
+      duck(0.35, 1.3);
+      [67, 63, 60, 55].forEach((n, i) => voice(midi(n), 0.4, { type: 'sawtooth', vol: 0.09, at: i * 0.15, lp: 1200, lpTo: 400, vib: 6, rev: 0.4 }));
+      voice(70, 0.8, { slide: 0.6, vol: 0.35, at: 0.1 });
+    },
+    death() {
+      duck(0.1, 2.4);
+      [36, 43, 48, 51].forEach((n) => { voice(midi(n), 1.8, { type: 'sawtooth', vol: 0.08, detune: rand(-12, 12), lp: 900, lpTo: 200, attack: 0.03, rev: 0.6 }); });
+      noise(1.8, { type: 'lowpass', freq: 500, vol: 0.4, attack: 0.01, rev: 0.6 });
+      voice(midi(66), 0.5, { type: 'triangle', vol: 0.1, at: 0.3, slide: 0.5, rev: 0.6 });
+      voice(55, 1.2, { slide: 0.5, vol: 0.5 });
+    },
+    sleep() { duck(0.4, 1.5); [76, 72, 67].forEach((n, i) => voice(midi(n), 0.6, { vol: 0.1, at: i * 0.28, attack: 0.05, rev: 0.6 })); noise(0.8, { freq: 900, q: 6, vol: 0.05, at: 0.6, attack: 0.3 }); },
+    splash() { noise(0.7, { type: 'lowpass', freq: 2500, vol: 0.35, sweep: 0.15 }); for (let i = 0; i < 5; i++) voice(rand(400, 900), 0.08, { slide: 1.8, vol: 0.06, at: 0.2 + i * rand(0.06, 0.12) }); },
+    bump() { voice(320, 0.35, { slide: 0.3, vol: 0.25, vib: 18 }); noise(0.15, { freq: 1200, q: 0.7, vol: 0.25 }); },
+    turn(idx) { const base = [76, 79, 74, 81][idx || 0]; voice(midi(base), 0.35, { vol: 0.08, rev: 0.6 }); voice(midi(base + 7), 0.45, { vol: 0.07, at: 0.09, rev: 0.6 }); },
     fanfare() {
-      const n = [523, 659, 784, 1047, 784, 1047];
-      n.forEach((f, i) => { tone(f, i === n.length - 1 ? 0.9 : 0.22, { type: 'triangle', vol: 0.22, at: i * 0.14 }); tone(f / 2, 0.3, { type: 'sine', vol: 0.1, at: i * 0.14 }); });
+      duck(0, 4.5);
+      const seq = [[60, 0], [64, 0.13], [67, 0.26], [72, 0.39], [67, 0.6], [72, 0.75]];
+      seq.forEach(([n, at]) => [0, 4, 7].forEach((iv) => voice(midi(n + (iv && at > 0.5 ? iv : 0)), at > 0.7 ? 1.6 : 0.2, { type: 'sawtooth', vol: 0.07, at, lp: 2400, attack: 0.02, rev: 0.5 })));
+      for (let i = 0; i < 12; i++) noise(0.06, { freq: 1600, q: 0.8, vol: 0.06 + i * 0.008, at: i * 0.05 });
+      noise(2, { type: 'highpass', freq: 5000, vol: 0.18, at: 0.75, rev: 0.6 });
+      voice(70, 0.5, { slide: 0.5, vol: 0.5, at: 0.75 });
     },
   };
 })();
@@ -418,7 +570,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.25;
 
 const C = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 function canvasTex(cv) { const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t; }
@@ -428,7 +580,7 @@ const scene = new THREE.Scene();
 (function sky() {
   const [cv, ctx] = makeCanvas(4, 256);
   const g = ctx.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, '#070c18'); g.addColorStop(0.55, '#0f1b33'); g.addColorStop(1, '#1d2440');
+  g.addColorStop(0, '#0e1730'); g.addColorStop(0.55, '#1a2a52'); g.addColorStop(1, '#33356a');
   ctx.fillStyle = g; ctx.fillRect(0, 0, 4, 256);
   scene.background = canvasTex(cv);
 })();
@@ -462,7 +614,7 @@ controls.enablePan = false;
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.45;
 
-scene.add(new THREE.HemisphereLight(C('#ffe9cc'), C('#1a2440'), 0.22));
+scene.add(new THREE.HemisphereLight(C('#ffe9cc'), C('#2a3466'), 0.4));
 const lamp = new THREE.SpotLight(C('#ffe2b5'), 2.6, 0, 0.5, 0.75, 1);
 lamp.position.set(5, 24, 9);
 lamp.target.position.set(0, 0, 0.5);
@@ -872,7 +1024,7 @@ function buildBoard() {
     m.position.set(p.x, BOARD_TOP, p.z);
     m.rotation.y = p.rot;
     m.castShadow = true; m.receiveShadow = true;
-    m.userData = { index: i, baseY: BOARD_TOP, lift: 0 };
+    m.userData = { index: i, baseY: BOARD_TOP, lift: 0, topMat: top, flash: 0, flashColor: null };
     scene.add(m);
     tileMeshes.push(m);
     const isGoose = GOOSE.includes(i);
@@ -989,12 +1141,119 @@ function makePawn(color) {
   const head = new THREE.Mesh(headGeo, mat);
   head.position.y = 0.59;
   lathe.castShadow = head.castShadow = true;
-  body.add(lathe, head);
+  // visage : deux yeux qui clignent
+  const eyes = new THREE.Group();
+  eyes.position.set(0, 0.62, 0.105);
+  [-1, 1].forEach((sd) => {
+    const white = new THREE.Mesh(eyeGeo, eyeWhite);
+    white.position.set(sd * 0.052, 0, 0);
+    const pupil = new THREE.Mesh(pupilGeo, eyeBlack);
+    pupil.position.set(sd * 0.052, 0.004, 0.034);
+    const shine = new THREE.Mesh(shineGeo, eyeWhite);
+    shine.position.set(sd * 0.052 + 0.01, 0.016, 0.052);
+    eyes.add(white, pupil, shine);
+  });
+  body.add(lathe, head, eyes);
   root.add(body);
-  root.scale.setScalar(0.85);
+  root.scale.setScalar(0.95);
   scene.add(root);
-  return { root, body, mat, base: C(color) };
+  return { root, body, mat, eyes, base: C(color), blinkAt: rand(1, 4) };
 }
+const eyeGeo = new THREE.SphereGeometry(0.048, 16, 12);
+const pupilGeo = new THREE.SphereGeometry(0.026, 12, 10);
+const shineGeo = new THREE.SphereGeometry(0.009, 6, 6);
+const eyeWhite = new THREE.MeshStandardMaterial({ color: C('#ffffff'), roughness: 0.2, emissive: C('#222222') });
+const eyeBlack = new THREE.MeshStandardMaterial({ color: C('#0b0b10'), roughness: 0.15 });
+
+/* Émoticônes qui s'affichent au-dessus d'un pion */
+const emoteCache = {};
+const emotes = [];
+function emoteTexture(ch) {
+  if (emoteCache[ch]) return emoteCache[ch];
+  const [cv, ctx] = makeCanvas(160);
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.arc(82, 84, 66, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff8ea'; ctx.beginPath(); ctx.arc(80, 80, 66, 0, Math.PI * 2); ctx.fill();
+  ctx.font = '84px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(ch, 80, 86);
+  return (emoteCache[ch] = canvasTex(cv));
+}
+function emote(p, ch) {
+  if (!p || !p.pawn) return;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: emoteTexture(ch), transparent: true, depthTest: false }));
+  sp.renderOrder = 20;
+  sp.scale.setScalar(0.01);
+  scene.add(sp);
+  emotes.push({ sp, p, t: 0 });
+}
+function updateEmotes(dt) {
+  for (let i = emotes.length - 1; i >= 0; i--) {
+    const e = emotes[i];
+    e.t += dt;
+    const pos = e.p.pawn.root.position;
+    e.sp.position.set(pos.x, pos.y + 1.6 + e.t * 0.22, pos.z);
+    const k = Math.min(1, e.t / 0.35);
+    e.sp.scale.setScalar(1.35 * easeOutBack(k));
+    e.sp.material.opacity = e.t > 1.8 ? Math.max(0, 1 - (e.t - 1.8) / 0.5) : 1;
+    if (e.t > 2.3) { scene.remove(e.sp); e.sp.material.dispose(); emotes.splice(i, 1); }
+  }
+}
+
+/* Rayon lumineux sur la case d'arrivée prévue */
+const beam = (() => {
+  const mat = new THREE.MeshBasicMaterial({ color: C('#ffffff'), transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+  const g = new THREE.Group();
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.55, 5, 24, 1, true), mat);
+  col.position.y = 2.5;
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.55, 32), mat);
+  disc.rotation.x = -Math.PI / 2; disc.position.y = 0.02;
+  g.add(col, disc);
+  g.visible = false;
+  scene.add(g);
+  return { g, mat, t: 0 };
+})();
+function showBeam(tile, color) {
+  const p = tilePos[tile];
+  beam.g.position.set(p.x, tile === LAST ? DAIS_TOP : TILE_TOP, p.z);
+  beam.mat.color.copy(C(color));
+  beam.t = 0;
+  beam.g.visible = true;
+}
+function hideBeam() { beam.g.visible = false; }
+
+/* Ballons de fête autour du plateau */
+const balloons = [];
+(function makeBalloons() {
+  const cols = ['#ff6b6b', '#ffd166', '#4ecdc4', '#7b8cff', '#ff8fd8', '#9be564', '#ffa94d', '#5ec8ff'];
+  const geo = new THREE.SphereGeometry(0.5, 24, 18);
+  const knotGeo = new THREE.ConeGeometry(0.08, 0.14, 8);
+  cols.forEach((c, i) => {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshPhysicalMaterial({ color: C(c), roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.15 });
+    const b = new THREE.Mesh(geo, mat); b.scale.set(1, 1.18, 1);
+    const knot = new THREE.Mesh(knotGeo, mat); knot.position.y = -0.62; knot.rotation.x = Math.PI;
+    const strGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -0.68, 0), new THREE.Vector3(0.05, -1.6, 0.03), new THREE.Vector3(-0.03, -2.6, 0)]);
+    const str = new THREE.Line(strGeo, new THREE.LineBasicMaterial({ color: C('#e8e0d0'), transparent: true, opacity: 0.6 }));
+    g.add(b, knot, str);
+    b.castShadow = true;
+    // en arc derrière le plateau (côté opposé à la caméra) pour ne jamais le masquer
+    const a = Math.PI * 0.92 + (i / (cols.length - 1)) * Math.PI * 1.16;
+    const r = 10.4 + (i % 2) * 1.3;
+    g.userData = { x: Math.cos(a) * r, z: Math.sin(a) * r, y: 3.2 + (i % 3) * 0.7, ph: rand(0, 6), rise: 0 };
+    scene.add(g);
+    balloons.push(g);
+  });
+})();
+function updateBalloons(t, dt) {
+  balloons.forEach((g) => {
+    const u = g.userData;
+    if (u.rise) u.rise += dt * (0.6 + u.ph * 0.1);
+    g.position.set(u.x + Math.sin(t * 0.5 + u.ph) * 0.25, u.y + Math.sin(t * 0.9 + u.ph) * 0.2 + u.rise, u.z + Math.cos(t * 0.4 + u.ph) * 0.25);
+    g.rotation.z = Math.sin(t * 0.7 + u.ph) * 0.1;
+    if (u.rise > 25) { u.rise = 0; }
+  });
+}
+
 const SLOT = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
 function slotPos(tile, idx) {
   const p = tilePos[tile];
@@ -1055,6 +1314,8 @@ function dieFace(v) {
 }
 const FACE_VALUES = [3, 4, 1, 6, 2, 5]; // +x, -x, +y, -y, +z, -z
 const dieMats = FACE_VALUES.map(dieFace);
+const DIE_WHITE = new THREE.Color(1, 1, 1);
+function tintDice(color) { const c = C(color); dieMats.forEach((m) => m.color.copy(DIE_WHITE).lerp(c, 0.42)); }
 const DIE = 0.8;
 const dieGeo = roundedBoxGeo(DIE, 0.12, 5);
 const dice = [0, 1].map(() => {
@@ -1072,7 +1333,7 @@ async function rollDiceAnim(a, b) {
   // anticipation : les dés se soulèvent et tremblent
   const lift = dice.map((d) => d.position.clone());
   sfx.shake();
-  await tween(380, (t) => dice.forEach((d, k) => {
+  await tween(280, (t) => dice.forEach((d, k) => {
     d.position.y = lift[k].y + easeOut(t) * 0.5;
     d.rotation.z += Math.sin(t * 40 + k) * 0.03;
   }));
@@ -1085,7 +1346,7 @@ async function rollDiceAnim(a, b) {
   // chute avec rebonds
   const t1 = 0.4, B = [[0.4, 0.66, 1.0], [0.66, 0.84, 0.35], [0.84, 1, 0.1]];
   let bounced = 0;
-  await tween(1500, (t) => {
+  await tween(1150, (t) => {
     const e = easeOut(Math.min(1, t * 1.15));
     let y;
     if (t < t1) y = 3.4 * (1 - Math.pow(t / t1, 2)) + 0.0;
@@ -1116,8 +1377,8 @@ async function hop(p, to, k = 0, last = false) {
   const dx = dest.x - from.x, dz = dest.z - from.z;
   const face = Math.atan2(dx, dz);
   // anticipation
-  await tween(90, (t) => setSquash(p, 1 + 0.14 * t, 1 - 0.2 * t));
-  await tween(340, (t) => {
+  await tween(70, (t) => setSquash(p, 1 + 0.14 * t, 1 - 0.2 * t));
+  await tween(290, (t) => {
     const e = easeInOut(t);
     p.pawn.root.position.lerpVectors(from, dest, e);
     p.pawn.root.position.y = from.y + (dest.y - from.y) * e + Math.sin(Math.PI * t) * 0.65;
@@ -1128,11 +1389,14 @@ async function hop(p, to, k = 0, last = false) {
   });
   p.pawn.body.rotation.x = 0;
   sfx.hop(k);
+  tileFlash(to, p.color);
+  if (!last && gooseProps[to]) gooseProps[to].userData.hop = 1;
+  fx.sparks(dest.clone().add(new THREE.Vector3(0, -0.25, 0)), last ? 8 : 3, p.color);
   if (last) sfx.land();
   fx.dust(dest, last ? 7 : 3);
   if (last) addTrauma(0.12);
   // atterrissage avec rebond élastique
-  await tween(last ? 320 : 170, (t) => {
+  await tween(last ? 260 : 130, (t) => {
     const e = easeOutBack(t);
     setSquash(p, 1.22 + (1 - 1.22) * e, 0.7 + (1 - 0.7) * e);
   });
@@ -1146,17 +1410,24 @@ function updateSteps(n, p) {
   el.textContent = n;
   el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
 }
+function predictDest(from, n) {
+  let pos = from, dir = 1;
+  for (let k = 0; k < n; k++) { if (pos === LAST) { if (!RM().exact) break; dir = -1; } pos += dir; }
+  return pos;
+}
 async function stepMove(p, n) {
   let dir = 1;
   state.cine = true;
+  showBeam(predictDest(p.pos, n), p.color);
   for (let k = 0; k < n; k++) {
     updateSteps(n - k, p);
-    if (p.pos === LAST) dir = -1;
+    if (p.pos === LAST) { if (!RM().exact) break; dir = -1; }
     p.pos += dir;
     await hop(p, p.pos, k, k === n - 1);
     tileBounce(p.pos);
   }
   updateSteps(0);
+  hideBeam();
   state.cine = false;
   renderPlayers();
 }
@@ -1186,6 +1457,12 @@ async function jumpTo(p, to, { spin = 1, height = 1 } = {}) {
   state.cine = false;
   renderPlayers();
 }
+function tileFlash(i, color) {
+  const m = tileMeshes[i];
+  if (!m || !m.userData.topMat) return;
+  m.userData.flash = 1;
+  m.userData.flashColor = C(color);
+}
 function tileBounce(i) {
   const m = tileMeshes[i];
   if (!m) return;
@@ -1212,7 +1489,7 @@ async function gooseCelebrate(i) {
 
 /* ================= Interface ================= */
 let toastTimer = null;
-function toast(icon, title, text, ms = 2100) {
+function toast(icon, title, text, ms = 1600) {
   const el = $('toast');
   el.querySelector('.ic').textContent = icon || '';
   el.querySelector('b').textContent = title;
@@ -1229,7 +1506,7 @@ function banner(p) {
   $('bannerName').style.color = p.color;
   el.style.animationDuration = Math.max(0.9, T(1500) / 1000) + 's';
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
-  sfx.turn();
+  sfx.turn(p.idx);
 }
 function flash(kind) {
   const el = $('flash');
@@ -1254,7 +1531,7 @@ function renderPlayers() {
     d.className = 'pl' + (i === state.cur && !state.over ? ' active' : '');
     let st = '';
     if (p.skip > 0) st = `À l'hôtel · ${p.skip} tour${p.skip > 1 ? 's' : ''}`;
-    else if (p.stuck) st = (p.pos === 31 ? 'Puits' : 'Prison') + ' · double pour sortir · ' + (STUCK_TRIES - p.tries) + ' essai' + (STUCK_TRIES - p.tries > 1 ? 's' : '');
+    else if (p.stuck) st = (p.pos === 31 ? 'Puits' : 'Prison') + ' · double pour sortir · ' + (RM().tries - p.tries) + ' essai' + (RM().tries - p.tries > 1 ? 's' : '');
     d.innerHTML = `<span class="dot" style="background:${p.color}"></span>
       <span class="nm">${escapeHtml(p.name)}${p.human ? '' : '<small>robot</small>'}</span>
       <span class="pos">${p.pos}</span>
@@ -1284,6 +1561,7 @@ function toScreen(v) {
 /* ================= Déroulement ================= */
 function newGame() {
   sfx.unlock();
+  sfx.setMood('play');
   state.gid++;
   state.players.forEach((p) => scene.remove(p.pawn.root));
   state.players = setup.players.slice(0, setup.count).map((s, i) => ({
@@ -1293,6 +1571,7 @@ function newGame() {
   state.players.forEach((p) => { p.pawn.root.position.copy(slotPos(0, p.idx)); p.pawn.root.rotation.y = tilePos[0].rot + Math.PI; });
   state.cur = 0; state.busy = false; state.over = false; state.started = true; state.cine = false;
   winSpin = 0;
+  balloons.forEach((g) => { g.userData.rise = 0; });
   updateSteps(0);
   $('log').innerHTML = '';
   $('diceRes').textContent = '– + –';
@@ -1316,9 +1595,10 @@ function newGame() {
 async function startTurn() {
   const gid = state.gid;
   const p = cur();
+  botPace = p.human ? 1 : 0.7;
   renderPlayers();
   banner(p);
-  await sleep(1000);
+  await sleep(650);
   if (gid !== state.gid) return;
   if (state.players.every((q) => q.stuck)) {
     state.players.forEach((q) => { q.stuck = false; q.tries = 0; });
@@ -1339,15 +1619,15 @@ async function startTurn() {
   if (p.stuck) {
     state.busy = true; renderPlayers();
     const well = p.pos === 31;
-    if (p.tries >= STUCK_TRIES) {
+    if (p.tries >= RM().tries) {
       // sortie d'office : le joueur joue normalement ce tour-ci
       p.stuck = false; p.tries = 0;
       log(`${who(p)} sort ${well ? 'du puits' : 'de prison'}.`);
       sfx.good();
       fx.sparks(p.pawn.root.position.clone(), 14, '#9fe0ff');
-      await toast(well ? '🪜' : '🔓', `${p.name} est libre`, `Après ${STUCK_TRIES} tours d'attente, ${p.name} sort ${well ? 'du puits' : 'de prison'} et joue.`);
+      await toast(well ? '🪜' : '🔓', `${p.name} est libre`, `Après ${RM().tries} tours d'attente, ${p.name} sort ${well ? 'du puits' : 'de prison'} et joue.`);
     } else {
-      await toast(well ? '🪣' : '🔒', `${p.name} tente sa chance`, `Un double pour sortir ${well ? 'du puits' : 'de prison'}. Sinon, sortie d'office dans ${STUCK_TRIES - p.tries} tour${STUCK_TRIES - p.tries > 1 ? 's' : ''}.`, 1800);
+      await toast(well ? '🪣' : '🔒', `${p.name} tente sa chance`, `Un double pour sortir ${well ? 'du puits' : 'de prison'}. Sinon, sortie d'office dans ${RM().tries - p.tries} tour${RM().tries - p.tries > 1 ? 's' : ''}.`, 1800);
     }
     if (gid !== state.gid) return;
     state.busy = false;
@@ -1355,7 +1635,7 @@ async function startTurn() {
   }
   renderPlayers();
   if (!p.human) {
-    await sleep(900);
+    await sleep(500);
     await waitUnpaused();
     if (gid !== state.gid) return;
     playTurn();
@@ -1363,7 +1643,7 @@ async function startTurn() {
 }
 async function nextPlayer() {
   if (state.over) return;
-  await sleep(350);
+  await sleep(200);
   await waitUnpaused();
   state.cur = (state.cur + 1) % state.players.length;
   startTurn();
@@ -1376,6 +1656,7 @@ function showDicePop(a, b) {
   el.hidden = false;
   el.style.animationDuration = Math.max(0.9, T(1500) / 1000) + 's';
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  sfx.pop();
 }
 
 async function playTurn() {
@@ -1387,12 +1668,13 @@ async function playTurn() {
   const a = 1 + Math.floor(Math.random() * 6), b = 1 + Math.floor(Math.random() * 6);
   const sum = a + b;
   $('diceRes').textContent = '…';
+  tintDice(p.color);
   await rollDiceAnim(a, b);
   if (gid !== state.gid) return;
   $('diceRes').textContent = `${a} + ${b} = ${sum}`;
   showDicePop(a, b);
   if (a === b) fx.sparks(new THREE.Vector3(0, DAIS_TOP, 0.85), 14);
-  await sleep(950);
+  await sleep(650);
   if (gid !== state.gid) return;
   const origin = p.pos;
   const first = !p.rolled;
@@ -1405,7 +1687,8 @@ async function playTurn() {
       p.tries++;
       log(`${who(p)} reste ${well ? 'au fond du puits' : 'en prison'}.`);
       sfx.bad();
-      const left = STUCK_TRIES - p.tries;
+      emote(p, '😩');
+      const left = RM().tries - p.tries;
       await toast('😩', 'Pas de double', left > 0 ? `Encore un essai au prochain tour.` : `${p.name} sortira d'office au prochain tour.`);
       if (gid !== state.gid) return;
       renderPlayers();
@@ -1415,6 +1698,7 @@ async function playTurn() {
     p.stuck = false; p.tries = 0;
     log(`${who(p)} fait un double et sort ${well ? 'du puits' : 'de prison'} !`);
     sfx.good();
+    emote(p, '🥳');
     fx.sparks(p.pawn.root.position.clone(), 18, '#9fe0ff');
     await toast('🎉', 'Double !', `${p.name} sort ${well ? 'du puits' : 'de prison'} et avance de ${sum} cases.`);
     if (gid !== state.gid) return;
@@ -1444,6 +1728,7 @@ async function playTurn() {
       log(`${who(p)} prend la place de ${who(q)}, qui part en case ${origin}.`);
       sfx.bump();
       addTrauma(0.35);
+      emote(q, freed ? '🥳' : '😠');
       fx.sparks(q.pawn.root.position.clone(), 12, freed ? '#9fe0ff' : '#ffd36b');
       await toast(freed ? '🔓' : '💥', freed ? `${q.name} est libre` : 'Place prise !', `${q.name} part en case ${origin}.`);
       if (gid !== state.gid) return;
@@ -1464,6 +1749,7 @@ async function resolve(p, sum, gid) {
     if (GOOSE.includes(i)) {
       log(`${who(p)} tombe sur une oie en ${i}.`);
       gooseCelebrate(i);
+      emote(p, '🤩');
       addTrauma(0.2);
       await toast('🦢', 'Oie !', `${p.name} avance encore de ${sum} cases.`);
       if (gid !== state.gid) return;
@@ -1471,18 +1757,19 @@ async function resolve(p, sum, gid) {
       await sleep(250);
       continue;
     }
-    if (i === 6) { log(`${who(p)} passe le pont.`); sfx.good(); await toast('🌉', 'Le Pont', "On traverse jusqu'à la case 12."); await jumpTo(p, 12); }
-    else if (i === 42) { log(`${who(p)} se perd dans le labyrinthe.`); sfx.bad(); fx.smoke(p.pawn.root.position.clone(), 10, '#8a78d0'); await toast('🌀', 'Le Labyrinthe', 'Perdu ! Retour à la case 30.'); await jumpTo(p, 30, { spin: 3 }); }
+    if (i === 6) { log(`${who(p)} passe le pont.`); sfx.good(); emote(p, '😎'); await toast('🌉', 'Le Pont', "On traverse jusqu'à la case 12."); await jumpTo(p, 12); }
+    else if (i === 42) { log(`${who(p)} se perd dans le labyrinthe.`); sfx.bad(); emote(p, '😵'); fx.smoke(p.pawn.root.position.clone(), 10, '#8a78d0'); await toast('🌀', 'Le Labyrinthe', 'Perdu ! Retour à la case 30.'); await jumpTo(p, 30, { spin: 3 }); }
     else if (i === 58) {
       log(`${who(p)} tombe sur la Mort.`);
-      sfx.bad(); flash('death'); addTrauma(0.7);
+      sfx.death(); flash('death'); addTrauma(0.7); emote(p, '😱');
       fx.smoke(p.pawn.root.position.clone(), 18);
-      await toast('💀', 'La Mort', 'Retour à la case départ.', 2400);
-      await jumpTo(p, 0, { spin: 3, height: 1.4 });
+      const to = RM().deathTo;
+      await toast('💀', 'La Mort', to ? `Recul à la case ${to}.` : 'Retour à la case départ.', 2000);
+      await jumpTo(p, to, { spin: 3, height: 1.4 });
     }
-    else if (i === 19) { p.skip = 2; log(`${who(p)} entre à l'hôtel.`); sfx.sleep(); await toast('🛏️', "L'Hôtel", `${p.name} passe 2 tours à se reposer.`); }
-    else if (i === 31) { p.stuck = true; p.tries = 0; log(`${who(p)} tombe dans le puits.`); sfx.splash(); fx.dust(p.pawn.root.position.clone(), 10, '#8ec5ff'); await toast('🪣', 'Le Puits', `Pour sortir : un double, ou attendre au plus ${STUCK_TRIES} tours.`); }
-    else if (i === 52) { p.stuck = true; p.tries = 0; log(`${who(p)} va en prison.`); sfx.bad(); addTrauma(0.3); await toast('🔒', 'La Prison', `Pour sortir : un double, ou attendre au plus ${STUCK_TRIES} tours.`); }
+    else if (i === 19) { p.skip = RM().hotel; log(`${who(p)} entre à l'hôtel.`); sfx.sleep(); emote(p, '😴'); await toast('🛏️', "L'Hôtel", `${p.name} passe ${RM().hotel} tour${RM().hotel > 1 ? 's' : ''} à se reposer.`); }
+    else if (i === 31) { p.stuck = true; p.tries = 0; log(`${who(p)} tombe dans le puits.`); sfx.splash(); emote(p, '😨'); fx.dust(p.pawn.root.position.clone(), 10, '#8ec5ff'); await toast('🪣', 'Le Puits', `Pour sortir : un double, ou attendre ${RM().tries} tour${RM().tries > 1 ? 's' : ''}.`); }
+    else if (i === 52) { p.stuck = true; p.tries = 0; log(`${who(p)} va en prison.`); sfx.bad(); emote(p, '😤'); addTrauma(0.3); await toast('🔒', 'La Prison', `Pour sortir : un double, ou attendre ${RM().tries} tour${RM().tries > 1 ? 's' : ''}.`); }
     return;
   }
 }
@@ -1493,7 +1780,10 @@ function win(p) {
   renderPlayers();
   log(`${who(p)} atteint le Jardin de l'Oie !`);
   winSpin = 1;
+  emote(p, '🏆');
+  balloons.forEach((g) => { g.userData.rise = 0.01; });
   sfx.fanfare();
+  sfx.setMood('calm');
   flash('gold');
   addTrauma(0.4);
   controls.autoRotate = true;
@@ -1517,6 +1807,7 @@ function win(p) {
 function renderSetup() {
   document.querySelectorAll('#countSeg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.n === setup.count)));
   document.querySelectorAll('#speedSeg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.s === speedIdx)));
+  document.querySelectorAll('#modeSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === gameMode)));
   const rows = $('setupRows');
   rows.innerHTML = '';
   for (let i = 0; i < setup.count; i++) {
@@ -1536,10 +1827,15 @@ function renderSetup() {
 }
 function setSpeed(i) {
   speedIdx = i; store.set('speed', i);
-  $('btnSpeed').textContent = 'Vitesse : ' + SPEEDS[i].label;
+  $('btnSpeed').textContent = 'Animations : ' + SPEEDS[i].label;
   renderSetup();
 }
 $('countSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; setup.count = +b.dataset.n; renderSetup(); });
+$('modeSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  gameMode = b.dataset.m; store.set('mode', gameMode);
+  renderSetup(); renderRules(); renderPlayers();
+});
 $('speedSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; setSpeed(+b.dataset.s); });
 $('btnSpeed').addEventListener('click', () => setSpeed((speedIdx + 1) % SPEEDS.length));
 $('btnSound').addEventListener('click', (e) => { sfx.unlock(); const on = sfx.toggle(); e.currentTarget.setAttribute('aria-pressed', String(on)); e.currentTarget.textContent = on ? 'Son' : 'Son coupé'; });
@@ -1576,7 +1872,8 @@ const openRules = () => openOverlay('rulesBox', 'rulesClose');
 $('btnRules').addEventListener('click', openRules);
 $('setupRules').addEventListener('click', openRules);
 $('rulesClose').addEventListener('click', () => closeOverlay('rulesBox'));
-$('rulesList').innerHTML = RULES.map(([n, c, t]) => `<li><span class="n" style="background:${c};color:${isDark(c) ? '#f6eedc' : '#1d1405'}">${n}</span><span>${t}</span></li>`).join('');
+function renderRules() { $('rulesList').innerHTML = rulesList().map(([n, c, t]) => `<li><span class="n" style="background:${c};color:${isDark(c) ? '#f6eedc' : '#1d1405'}">${n}</span><span>${t}</span></li>`).join(''); }
+renderRules();
 $('btnRoll').addEventListener('click', () => { if (cur() && cur().human) playTurn(); });
 $('btnFollow').addEventListener('click', (e) => {
   state.follow = !state.follow;
@@ -1643,8 +1940,13 @@ window.addEventListener('keydown', (e) => {
   if (cur() && cur().human) playTurn();
 });
 $('btnSound').setAttribute('aria-pressed', String(sfx.on));
+$('btnMusic').setAttribute('aria-pressed', String(sfx.musicOn));
+$('btnMusic').textContent = sfx.musicOn ? 'Musique' : 'Musique coupée';
+$('btnMusic').addEventListener('click', (e) => { sfx.unlock(); const on = sfx.toggleMusic(); e.currentTarget.setAttribute('aria-pressed', String(on)); e.currentTarget.textContent = on ? 'Musique' : 'Musique coupée'; });
+// la musique démarre au premier geste (règle des navigateurs)
+['pointerdown', 'keydown'].forEach((ev) => window.addEventListener(ev, () => sfx.unlock(), { once: true }));
 $('btnSound').textContent = sfx.on ? 'Son' : 'Son coupé';
-$('btnSpeed').textContent = 'Vitesse : ' + SPEEDS[speedIdx].label;
+$('btnSpeed').textContent = 'Animations : ' + SPEEDS[speedIdx].label;
 $('btnQuality').addEventListener('click', () => quality.cycle());
 quality.apply();
 
@@ -1732,6 +2034,16 @@ function frame() {
     b.position.y += ((q.skip > 0 ? 0.14 : 0) + sink - b.position.y) * Math.min(1, dt * 4);
     const grey = q.stuck ? 0.55 : 0;
     q.pawn.mat.color.copy(q.pawn.base).lerp(GREY, grey);
+    // regarde la caméra quand personne ne bouge, cligne des yeux
+    if (!state.busy) {
+      const want = Math.atan2(camera.position.x - q.pawn.root.position.x, camera.position.z - q.pawn.root.position.z);
+      let dA = want - q.pawn.root.rotation.y;
+      dA = Math.atan2(Math.sin(dA), Math.cos(dA));
+      q.pawn.root.rotation.y += dA * Math.min(1, dt * 3);
+    }
+    q.pawn.blinkAt -= dt;
+    q.pawn.eyes.scale.y = q.pawn.blinkAt < 0.12 && q.pawn.blinkAt > 0 ? 0.12 : (q.stuck || q.skip > 0 ? 0.35 : 1);
+    if (q.pawn.blinkAt <= 0) q.pawn.blinkAt = rand(2, 5);
     // le pion actif respire doucement quand il attend
     if (q === p && !state.busy && !state.over && !q.skip && !q.stuck) {
       const br = Math.sin(t * 3) * 0.03;
@@ -1747,12 +2059,23 @@ function frame() {
     let kick = 0;
     if (u.kick) { u.kick = Math.max(0, u.kick - dt * 3); kick = -Math.sin(u.kick * Math.PI) * 0.06; }
     m.position.y = u.baseY + u.lift + kick;
+    if (u.topMat && (u.flash > 0 || u.wasLit)) {
+      u.flash = Math.max(0, u.flash - dt * 1.2);
+      u.topMat.emissive.copy(u.flashColor || u.topMat.emissive).multiplyScalar(u.flash * 0.55);
+      u.wasLit = u.flash > 0;
+    }
   });
 
   // oies : coups de bec au repos
   for (const k in gooseProps) {
     const d = gooseProps[k].userData;
     if (d.busy) continue;
+    if (d.hop) {
+      d.hop = Math.max(0, d.hop - dt * 2.5);
+      gooseProps[k].position.y = TILE_H + Math.sin((1 - d.hop) * Math.PI) * 0.35;
+      d.wings.forEach((w, sd) => { w.rotation.z = (sd ? -1 : 1) * Math.abs(Math.sin(t * 30)) * 0.9 * d.hop; });
+      if (!d.hop) d.wings.forEach((w) => { w.rotation.z = 0; });
+    }
     d.head.rotation.x = Math.max(0, Math.sin(t * 0.9 + d.phase) * 2 - 1.6) * 1.2;
     d.inner.rotation.y = Math.sin(t * 0.4 + d.phase) * 0.3;
   }
@@ -1778,6 +2101,9 @@ function frame() {
   motes.m.geometry.attributes.position.needsUpdate = true;
 
   updateParticles(dt, t);
+  updateEmotes(dt);
+  updateBalloons(t, dt);
+  if (beam.g.visible) { beam.t += dt; beam.g.scale.set(1, Math.min(1, beam.t * 3), 1); beam.mat.opacity = 0.22 + Math.sin(t * 6) * 0.08; }
 
   // étiquettes HTML attachées à la 3D
   if (state.mover) {

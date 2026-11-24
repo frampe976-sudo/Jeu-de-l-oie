@@ -20,7 +20,8 @@ Ouvrir `index.html` dans un navigateur (connexion Internet nécessaire pour char
 
 - Oies (5, 9, 14, 18, 23, 27, 32, 36, 41, 45, 50, 54, 59) : on avance encore du même nombre.
 - 6 Pont → case 12 · 19 Hôtel : 2 tours sans jouer
-- 31 Puits et 52 Prison : on lance quand même les dés, un double fait sortir et avancer ; un autre joueur qui arrive vous délivre ; après 2 essais ratés on sort d'office au tour suivant
+- 31 Puits et 52 Prison : on lance quand même les dés, un double fait sortir et avancer ; un autre joueur qui arrive vous délivre ; sinon on sort d'office (après 1 essai en partie rapide, 2 en classique)
+- Partie rapide (par défaut) : hôtel 1 tour, la Mort fait reculer à la case 38, et il suffit d'atteindre ou dépasser la 63. Partie classique : règles traditionnelles
 - 42 Labyrinthe → case 30 · 58 La Mort → retour au départ
 - Premier lancer : 6 + 3 → case 26, 5 + 4 → case 53
 - Tomber sur une case occupée renvoie l'autre pion à la case d'où l'on vient.
