@@ -1816,9 +1816,9 @@ function renderProfile() {
         <div class="meter"><i style="width:${Math.round(profile.xp / need * 100)}%"></i></div>
         <div class="small">🪙 ${profile.coins} pièces · série de connexion : ${profile.login.streak} j</div></div>
       <div class="prof-box"><h3>Statistiques</h3>
-        <div class="small">${profile.games} parties · ${profile.wins} victoires (${winPct} %)</div>
+        <div class="small">${profile.games} partie${profile.games > 1 ? 's' : ''} · ${profile.wins} victoire${profile.wins > 1 ? 's' : ''} (${winPct} %)</div>
         <div class="small">Série en cours : ${profile.winStreak} · record : ${profile.bestStreak}</div>
-        <div class="small">Victoire la plus rapide : ${profile.fastest ? profile.fastest + ' tours' : '—'}</div></div>
+        <div class="small">Victoire la plus rapide : ${profile.fastest ? profile.fastest + ' tour' + (profile.fastest > 1 ? 's' : '') : '—'}</div></div>
       <div class="prof-box"><h3>Défis du jour</h3>${challengeList()}</div>
     </div>
     <div class="prof-box"><h3>Boutique de chapeaux</h3><div class="shop" id="shop">${Object.keys(HATS).map((k) => {
@@ -1956,9 +1956,9 @@ async function startTurn() {
     p.skip--;
     if (p.frozen) {
       p.frozen = false;
-      log(`${who(p)} est gelé et passe son tour.`);
+      log(`${who(p)} passe son tour (gel).`);
       sfx.bad();
-      await toast('🧊', `${p.name} est gelé`, 'Ce tour-ci, pas de lancer.');
+      await toast('🧊', 'Gel', `${p.name} passe son tour.`);
     } else {
       log(`${who(p)} se repose à l'hôtel.`);
       sfx.sleep();
@@ -2227,7 +2227,7 @@ function win(p) {
   setTimeout(() => { fx.confetti(c, 60, 0.9); sfx.honk(); }, 1200);
   setTimeout(() => {
     $('winTitle').innerHTML = `${escapeHtml(p.name)} <span>gagne</span>`;
-    $('winLead').textContent = `Arrivée au Jardin de l'Oie en ${p.turns} tours.`;
+    $('winLead').textContent = `Arrivée au Jardin de l'Oie en ${p.turns} tour${p.turns > 1 ? 's' : ''}.`;
     const ranked = [...state.players].sort((x, y) => y.pos - x.pos);
     $('winRank').innerHTML = ranked.map((q, k) => `<li><span class="dot" style="background:${q.color}"></span><span>${k + 1}. ${escapeHtml(q.name)}</span><span>case ${q.pos}</span></li>`).join('');
     $('rewards').innerHTML = rewardsHtml;

@@ -12,6 +12,15 @@ Le jeu de l'oie traditionnel (63 cases) sur un plateau en spirale en 3D, jouable
 - Caméra qui suit et se rapproche du pion pendant ses déplacements
 - Sons synthétisés (dés, sauts, oie, fanfare) et réglage de vitesse (lente, normale, rapide)
 
+## Mode compétitif (tout en local)
+
+- **Cartes pouvoirs** : les cases violettes font piocher une carte (3 au maximum). Une carte par tour, avant de lancer : ⚡ Turbo (+3 cases), 🛡️ Bouclier (contre les pièges et les délogements), 🎲 3 dés (on garde les 2 meilleurs), 🔄 Échange (avec le leader), 🧊 Gel (le leader passe son tour). Chaque joueur commence avec une carte.
+- **Robots** Facile, Normal ou Expert : les robots Expert jouent leurs cartes au meilleur moment.
+- **Trophées et rangs** (Bronze → Légende) : une victoire en rapporte (davantage contre des Expert et en série), une défaite en coûte.
+- **Niveaux, pièces et boutique** : l'expérience et les pièces gagnées à chaque partie débloquent des chapeaux pour son pion.
+- **Défis du jour** (3 par jour) et **bonus de connexion** qui grandit avec la série de jours.
+- Le profil est celui du premier joueur humain ; il est enregistré sur l'appareil, sans compte ni connexion.
+
 ## Jouer
 
 Ouvrir `index.html` dans un navigateur (connexion Internet nécessaire pour charger three.js et les polices).
