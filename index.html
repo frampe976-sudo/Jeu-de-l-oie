@@ -148,6 +148,49 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--saffron); o
 .rank li span:last-child { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
 .loading { position: fixed; inset: 0; display: grid; place-items: center; font-family: var(--display); color: var(--muted); }
 
+/* Méta-jeu : profil, cartes, récompenses */
+.pstrip { display: flex; align-items: center; gap: 10px; width: 100%; margin: 0 0 12px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--ivory); text-align: left; font-weight: 700; flex-wrap: wrap; }
+.pstrip:hover { border-color: var(--saffron); }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-family: var(--display); font-weight: 800; font-size: 0.85rem; color: #15110a; white-space: nowrap; }
+.pstrip .stat { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+.pstrip .stat b { color: var(--ivory); font-variant-numeric: tabular-nums; }
+.pstrip .go { margin-left: auto; color: var(--saffron); font-size: 0.85rem; white-space: nowrap; }
+.daily { margin: -4px 0 12px; padding: 8px 12px; border-radius: 10px; background: rgba(245,176,65,0.12); color: var(--saffron); font-weight: 800; font-size: 0.9rem; }
+.hand { display: flex; gap: 6px; }
+.hand:empty { display: none; }
+.cardbtn { width: 50px; height: 62px; border-radius: 9px; border: 2px solid rgba(255,255,255,0.25); background: linear-gradient(160deg, #7a4fd0, #3c2a7a); color: #fff; display: grid; place-items: center; align-content: center; gap: 2px; padding: 0; font-size: 0.62rem; font-weight: 800; line-height: 1; transition: transform .15s, border-color .15s, opacity .15s; }
+.cardbtn span { font-size: 1.35rem; line-height: 1; }
+.cardbtn:hover:not(:disabled) { transform: translateY(-4px); border-color: var(--saffron); }
+.cardbtn:disabled { opacity: 0.45; cursor: default; }
+.cardbtn.used { border-color: var(--saffron); box-shadow: 0 0 14px rgba(245,176,65,0.6); }
+.card.wide { width: min(620px, 100%); }
+.prof-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.prof-box { padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--line); min-width: 0; }
+.prof-box h3 { margin: 0 0 8px; font-family: var(--display); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.meter { height: 9px; border-radius: 9px; background: var(--line); overflow: hidden; margin: 6px 0 4px; }
+.meter i { display: block; height: 100%; border-radius: 9px; background: var(--saffron); transition: width 1.2s cubic-bezier(.2,.8,.2,1); }
+.small { font-size: 0.82rem; color: var(--muted); }
+.big { font-family: var(--display); font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.chal { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.chal li { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+.chal li .ck { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; font-size: 0.7rem; }
+.chal li.done .ck { background: #3bab6a; border-color: #3bab6a; color: #fff; }
+.chal li.done span.t { text-decoration: line-through; color: var(--muted); }
+.chal li .rw { margin-left: auto; color: var(--saffron); font-weight: 800; white-space: nowrap; }
+.shop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.shop button { padding: 10px 6px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--ivory); display: grid; gap: 3px; justify-items: center; font-weight: 700; font-size: 0.82rem; }
+.shop button .ic { font-size: 1.5rem; }
+.shop button.eq { border-color: var(--saffron); background: rgba(245,176,65,0.14); }
+.shop button .pr { color: var(--saffron); font-size: 0.78rem; }
+.shop button:disabled { opacity: 0.5; cursor: default; }
+.rewards { display: grid; gap: 10px; margin-top: 14px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--line); }
+.rw-row { display: grid; grid-template-columns: 110px minmax(0,1fr) auto; gap: 10px; align-items: center; font-weight: 700; }
+.rw-row .meter { margin: 0; }
+.rw-row .v { font-family: var(--display); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rw-up { color: #5fd38d; } .rw-down { color: #ff7a6b; }
+.rw-note { font-weight: 800; color: var(--saffron); animation: cardRise .5s cubic-bezier(.34,1.4,.64,1); }
+@media (max-width: 560px) { .prof-grid { grid-template-columns: 1fr; } .shop { grid-template-columns: repeat(2, 1fr); } .rw-row { grid-template-columns: 84px minmax(0,1fr) auto; } }
+
 /* Télévision : navigation à la télécommande */
 .hint { display: none; font-size: 0.78rem; color: var(--muted); font-weight: 700; line-height: 1.3; }
 body.tv .hint { display: block; }
@@ -168,7 +211,9 @@ body.tv .roll:focus { transform: scale(1.06); }
   .players h2 { display: none; }
   .pl { flex: 0 0 auto; width: 150px; padding: 6px 8px; }
   .pl.active { transform: none; }
-  .controls { grid-column: 1; grid-row: 4; width: 100%; box-sizing: border-box; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 14px; }
+  .controls { grid-column: 1; grid-row: 4; width: 100%; box-sizing: border-box; justify-content: space-between; gap: 8px 10px; padding: 8px 8px 8px 14px; flex-wrap: wrap; }
+  .hand { order: 5; width: 100%; justify-content: center; }
+  .cardbtn { width: 46px; height: 54px; }
   .roll { padding: 11px 14px; font-size: 0.95rem; }
   .turn strong { font-size: 1rem; }
   .dice-res { min-width: 0; }
@@ -191,6 +236,7 @@ body.tv .roll:focus { transform: scale(1.06); }
       <button class="chip" id="btnRules" type="button">Règles</button>
       <button class="chip" id="btnNew" type="button">Nouvelle partie</button>
       <button class="chip" id="btnSpeed" type="button">Animations : normales</button>
+      <button class="chip" id="btnProfile2" type="button">Profil</button>
       <button class="chip" id="btnSound" type="button" aria-pressed="true">Son</button>
       <button class="chip" id="btnMusic" type="button" aria-pressed="true">Musique</button>
       <button class="chip" id="btnQuality" type="button">Qualité : auto</button>
@@ -203,7 +249,8 @@ body.tv .roll:focus { transform: scale(1.06); }
     <section class="log panel"><h2>Journal</h2><ol id="log"></ol></section>
   </aside>
   <div class="controls panel">
-    <div class="turn"><small>Au tour de</small><strong id="turnName"><i></i>—</strong></div>
+    <div class="turn"><small id="turnLbl">Au tour de</small><strong id="turnName"><i></i>—</strong></div>
+    <div class="hand" id="hand" aria-label="Cartes pouvoirs"></div>
     <div class="dice-res" id="diceRes">– + –</div>
     <button class="roll" id="btnRoll" type="button" disabled>Lancer les dés</button>
     <div class="hint" id="tvHint">OK : lancer<br>Retour : menu</div>
@@ -218,8 +265,10 @@ body.tv .roll:focus { transform: scale(1.06); }
 
 <div class="overlay" id="setup">
   <div class="card">
+    <button class="pstrip" type="button" id="btnProfile" aria-label="Profil, défis et boutique"></button>
+    <p class="daily" id="dailyMsg" hidden></p>
     <h2>Une partie de <span>l'Oie</span></h2>
-    <p class="lead">63 cases en spirale, deux dés et quelques oies bien placées. Le premier qui atteint la case 63 gagne.</p>
+    <p class="lead">Atteins la case 63 avant les autres. Ramasse des cartes pouvoirs, piège les leaders, grimpe dans le classement.</p>
     <div class="lbl">Nombre de joueurs</div>
     <div class="seg" id="countSeg">
       <button type="button" data-n="2">2</button>
@@ -237,16 +286,16 @@ body.tv .roll:focus { transform: scale(1.06); }
         </div>
       </div>
       <div>
-        <div class="lbl">Animations</div>
-        <div class="seg" id="speedSeg">
-          <button type="button" data-s="0">Lentes</button>
-          <button type="button" data-s="1" aria-pressed="true">Normales</button>
-          <button type="button" data-s="2">Vives</button>
+        <div class="lbl">Robots</div>
+        <div class="seg" id="botSeg">
+          <button type="button" data-b="0">Facile</button>
+          <button type="button" data-b="1" aria-pressed="true">Normal</button>
+          <button type="button" data-b="2">Expert</button>
         </div>
       </div>
     </div>
     <div class="actions">
-      <button class="chip" type="button" id="setupRules">Lire les règles</button>
+      <button class="chip" type="button" id="setupRules">Règles</button>
       <button class="chip" type="button" id="btnResume" hidden>Reprendre</button>
       <button class="roll" type="button" id="btnStart">Commencer</button>
     </div>
@@ -267,10 +316,19 @@ body.tv .roll:focus { transform: scale(1.06); }
     <h2 id="winTitle">Victoire</h2>
     <p class="lead" id="winLead"></p>
     <ol class="rank" id="winRank"></ol>
+    <div id="rewards"></div>
     <div class="actions">
-      <button class="chip" type="button" id="winSetup">Changer les joueurs</button>
+      <button class="chip" type="button" id="winSetup">Menu</button>
       <button class="roll" type="button" id="winAgain">Rejouer</button>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="profileBox" hidden>
+  <div class="card wide">
+    <h2 id="profTitle">Profil</h2>
+    <div id="profBody"></div>
+    <div class="actions"><button class="roll" type="button" id="profClose">Fermer</button></div>
   </div>
 </div>
 
@@ -290,6 +348,7 @@ const MODES = {
 let gameMode = 'rapide';
 const RM = () => MODES[gameMode] || MODES.rapide;
 const GOOSE = [5, 9, 14, 18, 23, 27, 32, 36, 41, 45, 50, 54, 59];
+const CARD_TILES = [3, 8, 11, 16, 21, 25, 29, 34, 39, 44, 48, 56, 61]; // on y pioche une carte pouvoir
 const SPECIAL = {
   0:  { name: 'Départ', label: 'DÉPART', color: '#2f6d4f', desc: "Tous les pions partent d'ici." },
   6:  { name: 'Le Pont', label: 'PONT', color: '#9a6b3f', desc: "On traverse le pont jusqu'à la case 12." },
@@ -322,6 +381,7 @@ function tileInfo(i) {
   };
   if (SPECIAL[i]) return dyn[i] ? Object.assign({}, SPECIAL[i], { desc: dyn[i] }) : SPECIAL[i];
   if (GOOSE.includes(i)) return GOOSE_INFO;
+  if (CARD_TILES.includes(i)) return { name: 'Carte pouvoir', desc: 'On pioche une carte pouvoir (3 au maximum en main).' };
   return { name: 'Case ' + i, desc: EXTRA[i] || 'Case ordinaire.' };
 }
 function rulesList() {
@@ -336,6 +396,8 @@ function rulesList() {
     ['58', '#55525e', m.deathTo ? `La Mort : recul à la case ${m.deathTo}.` : 'La Mort : retour au départ.'],
     ['1er', PALETTE[0], 'Premier lancer : 6 + 3 envoie en 26, 5 + 4 en 53.'],
     ['⇄', PALETTE[3], "Tomber sur une case occupée renvoie l'autre pion à la case d'où vous venez."],
+    ['✦', '#6d4bc8', 'Cases violettes : on pioche une carte pouvoir (3 au maximum). Une carte par tour, avant de lancer : ⚡ Turbo +3, 🛡️ Bouclier, 🎲 3 dés, 🔄 Échange avec le leader, 🧊 Gel du leader.'],
+    ['🏆', '#f2c230', 'Gagner rapporte des trophées (plus contre des robots Expert), perdre en coûte. Les pièces gagnées achètent des chapeaux.'],
     ['63', SPECIAL[63].color, m.exact ? 'Il faut tomber pile : le surplus fait reculer.' : 'Le premier qui atteint ou dépasse la 63 gagne.'],
   ];
 }
@@ -552,6 +614,17 @@ const sfx = (() => {
     splash() { noise(0.7, { type: 'lowpass', freq: 2500, vol: 0.35, sweep: 0.15 }); for (let i = 0; i < 5; i++) voice(rand(400, 900), 0.08, { slide: 1.8, vol: 0.06, at: 0.2 + i * rand(0.06, 0.12) }); },
     bump() { voice(320, 0.35, { slide: 0.3, vol: 0.25, vib: 18 }); noise(0.15, { freq: 1200, q: 0.7, vol: 0.25 }); },
     turn(idx) { const base = [76, 79, 74, 81][idx || 0]; voice(midi(base), 0.35, { vol: 0.08, rev: 0.6 }); voice(midi(base + 7), 0.45, { vol: 0.07, at: 0.09, rev: 0.6 }); },
+    card() {
+      duck(0.5, 0.8);
+      [79, 83, 86, 91].forEach((n, i) => voice(midi(n), 0.3, { type: 'triangle', vol: 0.09, at: i * 0.045, rev: 0.6 }));
+      noise(0.35, { type: 'highpass', freq: 6000, vol: 0.06, attack: 0.05, rev: 0.5 });
+    },
+    coin() { voice(midi(88), 0.09, { type: 'square', vol: 0.035, lp: 4000 }); voice(midi(95), 0.12, { type: 'square', vol: 0.03, at: 0.05, lp: 4000 }); },
+    levelUp() {
+      duck(0.2, 1.6);
+      [72, 76, 79, 84, 88].forEach((n, i) => { voice(midi(n), 0.5, { type: 'triangle', vol: 0.14, at: i * 0.09, rev: 0.6 }); voice(midi(n - 12), 0.4, { vol: 0.06, at: i * 0.09 }); });
+      noise(1.2, { type: 'highpass', freq: 6000, vol: 0.08, at: 0.4, rev: 0.6 });
+    },
     fanfare() {
       duck(0, 4.5);
       const seq = [[60, 0], [64, 0.13], [67, 0.26], [72, 0.39], [67, 0.6], [72, 0.75]];
@@ -804,6 +877,7 @@ const BOARD_R = Math.max(...tilePos.map((p) => Math.hypot(p.x, p.z))) + 1.15;
 function tileColor(i) {
   if (SPECIAL[i]) return SPECIAL[i].color;
   if (GOOSE.includes(i)) return '#fbf6ea';
+  if (CARD_TILES.includes(i)) return '#6d4bc8';
   return PALETTE[i % PALETTE.length];
 }
 function isDark(hex) { const c = new THREE.Color(hex); return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) < 0.45; }
@@ -839,7 +913,16 @@ function tileTexture(i) {
   ctx.lineWidth = 2; ctx.strokeRect(28, 28, S - 56, S - 56);
   ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const special = SPECIAL[i], goose = GOOSE.includes(i);
-  if (special || goose) {
+  if (CARD_TILES.includes(i)) {
+    ctx.font = '800 60px "Bricolage Grotesque", sans-serif';
+    ctx.fillText(String(i), S / 2, 68);
+    // petite carte dorée
+    ctx.save(); ctx.translate(S / 2, 158); ctx.rotate(-0.12);
+    ctx.fillStyle = '#f5c95a'; ctx.fillRect(-30, -40, 60, 80);
+    ctx.fillStyle = '#6d4bc8'; ctx.fillRect(-24, -34, 48, 68);
+    ctx.fillStyle = '#f5c95a'; ctx.font = '800 40px "Bricolage Grotesque", sans-serif'; ctx.fillText('✦', 0, 2);
+    ctx.restore();
+  } else if (special || goose) {
     ctx.font = '800 60px "Bricolage Grotesque", sans-serif';
     ctx.fillText(String(i), S / 2, 68);
     if (goose) drawGooseIcon(ctx, S / 2 + 6, 156, 1.2, '#2f5fb3');
@@ -994,6 +1077,14 @@ function makeProp(i) {
     const pole = add(new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.6, 6), std('#ddd', { metalness: 0.6 }))); pole.position.y = 0.3;
     const flag = add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.01), std('#f5b041'))); flag.position.set(0.11, 0.52, 0);
     g.userData.flag = flag;
+  } else if (CARD_TILES.includes(i)) {
+    const card = new THREE.Group();
+    const back = add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.3, 0.02), std('#f5c95a', { metalness: 0.6, roughness: 0.3 })));
+    const face = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 0.024), new THREE.MeshStandardMaterial({ color: C('#7b55e0'), emissive: C('#5a33c8'), emissiveIntensity: 0.5 }));
+    card.add(back, face);
+    card.position.y = 0.32;
+    g.add(card);
+    g.userData.spin = card;
   } else return null;
   return g;
 }
@@ -1366,7 +1457,7 @@ async function rollDiceAnim(a, b) {
 /* ================= État de jeu ================= */
 const state = { players: [], cur: 0, busy: false, gid: 0, over: false, follow: true, started: false, mover: null, cine: false, paused: false };
 async function waitUnpaused() { while (state.paused) await new Promise((r) => setTimeout(r, 200)); }
-const setup = { count: 3, players: DEFAULT_NAMES.map((n, i) => ({ name: n, human: i === 0 })) };
+const setup = { count: 3, botLevel: Math.min(2, Math.max(0, store.get('bots', 1) | 0)), players: DEFAULT_NAMES.map((n, i) => ({ name: n, human: i === 0 })) };
 const cur = () => state.players[state.cur];
 
 function setSquash(p, sx, sy) { p.pawn.body.scale.set(sx, sy, sx); }
@@ -1531,9 +1622,10 @@ function renderPlayers() {
     d.className = 'pl' + (i === state.cur && !state.over ? ' active' : '');
     let st = '';
     if (p.skip > 0) st = `À l'hôtel · ${p.skip} tour${p.skip > 1 ? 's' : ''}`;
+    else if (p.frozen) st = 'Gelé';
     else if (p.stuck) st = (p.pos === 31 ? 'Puits' : 'Prison') + ' · double pour sortir · ' + (RM().tries - p.tries) + ' essai' + (RM().tries - p.tries > 1 ? 's' : '');
     d.innerHTML = `<span class="dot" style="background:${p.color}"></span>
-      <span class="nm">${escapeHtml(p.name)}${p.human ? '' : '<small>robot</small>'}</span>
+      <span class="nm">${escapeHtml(p.name)}${p.human ? '' : '<small>robot</small>'}${p.shield ? ' 🛡️' : ''}${p.hand && p.hand.length ? ` <small>🃏${p.hand.length}</small>` : ''}</span>
       <span class="pos">${p.pos}</span>
       <span class="bar"><i style="width:${(p.pos / LAST) * 100}%;background:${p.color}"></i></span>
       ${st ? `<span class="st">${st}</span>` : ''}`;
@@ -1548,6 +1640,8 @@ function renderPlayers() {
     btn.classList.toggle('ready', canRoll);
     btn.textContent = p.human ? 'Lancer les dés' : 'Le robot joue…';
     document.body.classList.toggle('anim', state.busy && !state.over);
+    $('turnLbl').textContent = `Tour ${p.turns || 1} · au tour de`;
+    renderHand();
     layoutView();
     const ae = document.activeElement;
     if (canRoll && $('setup').hidden && $('rulesBox').hidden && $('winBox').hidden && (!ae || ae === document.body || ae.disabled || ae === btn)) btn.focus({ preventScroll: true });
@@ -1558,16 +1652,264 @@ function toScreen(v) {
   return { x: (p.x * 0.5 + 0.5) * window.innerWidth, y: (-p.y * 0.5 + 0.5) * window.innerHeight, ok: p.z < 1 };
 }
 
+/* ================= Méta-jeu : cartes, profil, défis, boutique ================= */
+const CARDS = {
+  turbo:  { icon: '⚡', name: 'Turbo',     desc: '+3 cases à ce lancer.' },
+  shield: { icon: '🛡️', name: 'Bouclier', desc: "Protège des pièges et des délogements jusqu'à ton prochain tour." },
+  three:  { icon: '🎲', name: '3 dés',     desc: 'Lance 3 dés et garde les 2 meilleurs.' },
+  swap:   { icon: '🔄', name: 'Échange',   desc: 'Échange ta place avec le joueur en tête.' },
+  freeze: { icon: '🧊', name: 'Gel',       desc: 'Le joueur en tête passe son prochain tour.' },
+};
+const CARD_KEYS = Object.keys(CARDS);
+const HAND_MAX = 3;
+const TRAPS = [19, 31, 42, 52, 58];
+const randomCard = () => CARD_KEYS[Math.floor(Math.random() * CARD_KEYS.length)];
+const BOT_LEVELS = [{ label: 'Facile', win: 12, lose: 4, coin: 1 }, { label: 'Normal', win: 22, lose: 8, coin: 1.5 }, { label: 'Expert', win: 34, lose: 12, coin: 2 }];
+
+const RANKS = [[0, 'Bronze', '#d39a62'], [100, 'Argent', '#c9d1dc'], [250, 'Or', '#f2c230'], [500, 'Platine', '#7fe0d6'], [900, 'Diamant', '#7ab8ff'], [1400, 'Maître', '#c77dff'], [2000, 'Légende', '#ff6b6b']];
+function rankOf(tr) {
+  let i = 0;
+  while (i + 1 < RANKS.length && tr >= RANKS[i + 1][0]) i++;
+  const [min, name, color] = RANKS[i];
+  const next = RANKS[i + 1];
+  return { name, color, min, next: next ? next[0] : null, nextName: next ? next[1] : null, pct: next ? (tr - min) / (next[0] - min) : 1 };
+}
+const xpNeed = (lvl) => 100 + (lvl - 1) * 50;
+
+const HATS = {
+  none:   { icon: '🚫', name: 'Aucun', price: 0 },
+  party:  { icon: '🎉', name: 'Fête', price: 80 },
+  tophat: { icon: '🎩', name: 'Haut-de-forme', price: 150 },
+  viking: { icon: '⚔️', name: 'Viking', price: 250 },
+  crown:  { icon: '👑', name: 'Couronne', price: 400 },
+  halo:   { icon: '😇', name: 'Auréole', price: 600 },
+};
+
+const CHALLENGES = [
+  { id: 'win',    text: 'Gagner une partie',                   reward: 30, test: (g) => g.won },
+  { id: 'geese',  text: 'Tomber sur 3 oies dans une partie',   reward: 25, test: (g) => g.geese >= 3 },
+  { id: 'cards',  text: 'Jouer 2 cartes dans une partie',      reward: 20, test: (g) => g.cards >= 2 },
+  { id: 'bump',   text: 'Déloger un adversaire',               reward: 25, test: (g) => g.bumps >= 1 },
+  { id: 'expert', text: 'Gagner contre des robots Expert',     reward: 60, test: (g) => g.won && g.level === 2 && g.bots > 0 },
+  { id: 'fast',   text: 'Gagner en 12 tours ou moins',         reward: 50, test: (g) => g.won && g.turns <= 12 },
+  { id: 'clean',  text: 'Finir une partie sans tomber dans un piège', reward: 40, test: (g) => g.traps === 0 },
+  { id: 'play3',  text: 'Jouer 3 parties aujourd\'hui',        reward: 30, test: (g, d) => d.plays >= 3 },
+];
+function todayKey(offset) {
+  const d = new Date(); d.setDate(d.getDate() + (offset || 0));
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function seeded(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 100000) / 100000; }; }
+
+const PROFILE_DEFAULT = { xp: 0, level: 1, coins: 50, trophies: 0, games: 0, wins: 0, winStreak: 0, bestStreak: 0, fastest: null,
+  hats: ['none'], hat: 'none', login: { last: null, streak: 0 }, daily: { date: null, ids: [], done: {}, plays: 0 } };
+let profile = (() => {
+  const saved = store.get('profile', null) || {};
+  const p = JSON.parse(JSON.stringify(PROFILE_DEFAULT));
+  Object.keys(saved).forEach((k) => { p[k] = saved[k]; });
+  return p;
+})();
+const saveProfile = () => store.set('profile', profile);
+function ensureDaily() {
+  const today = todayKey();
+  if (profile.daily.date !== today) {
+    const rnd = seeded('oie-' + today);
+    const pool = CHALLENGES.map((c) => c.id);
+    const ids = [];
+    while (ids.length < 3) { const id = pool.splice(Math.floor(rnd() * pool.length), 1)[0]; ids.push(id); }
+    profile.daily = { date: today, ids, done: {}, plays: 0 };
+    saveProfile();
+  }
+}
+// Bonus de connexion : renvoie le message à afficher, ou null
+function loginBonus() {
+  const today = todayKey();
+  if (profile.login.last === today) return null;
+  profile.login.streak = profile.login.last === todayKey(-1) ? profile.login.streak + 1 : 1;
+  profile.login.last = today;
+  const gain = 10 * Math.min(profile.login.streak, 7);
+  profile.coins += gain;
+  saveProfile();
+  return `🎁 Bonus du jour : +${gain} pièces · série de ${profile.login.streak} jour${profile.login.streak > 1 ? 's' : ''}`;
+}
+
+/* ----- chapeaux (cosmétiques) ----- */
+function makeHat(key) {
+  const g = new THREE.Group();
+  const m = (c, o) => std(c, Object.assign({ roughness: 0.4 }, o || {}));
+  if (key === 'party') {
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.26, 16), m('#ff5fa2'));
+    cone.position.y = 0.13; cone.rotation.z = 0.18;
+    const pom = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), m('#ffe066'));
+    pom.position.set(-0.024, 0.26, 0);
+    g.add(cone, pom);
+  } else if (key === 'tophat') {
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.02, 24), m('#151518'));
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.2, 24), m('#151518'));
+    top.position.y = 0.11;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.102, 0.102, 0.04, 24), m('#d9363e'));
+    band.position.y = 0.04;
+    g.add(brim, top, band);
+  } else if (key === 'viking') {
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), m('#9aa3ad', { metalness: 0.7, roughness: 0.3 }));
+    [-1, 1].forEach((sd) => {
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.17, 10), m('#f3ead2'));
+      horn.position.set(sd * 0.14, 0.07, 0); horn.rotation.z = -sd * 0.9;
+      g.add(horn);
+    });
+    g.add(dome);
+  } else if (key === 'crown') {
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.07, 24, 1, true), m('#f2c230', { metalness: 0.9, roughness: 0.25, side: THREE.DoubleSide }));
+    ring.position.y = 0.035;
+    g.add(ring);
+    for (let k = 0; k < 6; k++) {
+      const a = k / 6 * Math.PI * 2;
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.07, 6), m('#f2c230', { metalness: 0.9, roughness: 0.25 }));
+      sp.position.set(Math.cos(a) * 0.1, 0.1, Math.sin(a) * 0.1);
+      const gem = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 6), m(['#e2483a', '#3f7de0', '#3bab6a'][k % 3]));
+      gem.position.set(Math.cos(a) * 0.112, 0.035, Math.sin(a) * 0.112);
+      g.add(sp, gem);
+    }
+  } else if (key === 'halo') {
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 10, 32), new THREE.MeshStandardMaterial({ color: C('#ffe58a'), emissive: C('#ffcf40'), emissiveIntensity: 1.4 }));
+    halo.rotation.x = Math.PI / 2; halo.position.y = 0.12;
+    g.add(halo);
+    g.userData.spin = halo;
+  }
+  g.children.forEach((c) => { c.castShadow = true; });
+  g.position.y = 0.7;
+  return g;
+}
+
+/* ----- interface du profil ----- */
+function profileStripHtml() {
+  const r = rankOf(profile.trophies);
+  return `<span class="badge" style="background:${r.color}">🏆 ${r.name}</span>
+    <span class="stat"><b>${profile.trophies}</b> trophées</span>
+    <span class="stat">Niv. <b>${profile.level}</b></span>
+    <span class="stat">🪙 <b>${profile.coins}</b></span>
+    <span class="go">Défis et boutique ›</span>`;
+}
+function renderProfileStrip() { const el = $('btnProfile'); if (el) el.innerHTML = profileStripHtml(); }
+function challengeList() {
+  ensureDaily();
+  return `<ul class="chal">${profile.daily.ids.map((id) => {
+    const c = CHALLENGES.find((x) => x.id === id);
+    const done = profile.daily.done[id];
+    return `<li class="${done ? 'done' : ''}"><span class="ck">${done ? '✓' : ''}</span><span class="t">${c.text}</span><span class="rw">+${c.reward} 🪙</span></li>`;
+  }).join('')}</ul>`;
+}
+function renderProfile() {
+  ensureDaily();
+  const r = rankOf(profile.trophies);
+  const need = xpNeed(profile.level);
+  const winPct = profile.games ? Math.round(profile.wins / profile.games * 100) : 0;
+  $('profTitle').innerHTML = `Profil · <span>${escapeHtml(profileName())}</span>`;
+  $('profBody').innerHTML = `
+    <div class="prof-grid">
+      <div class="prof-box"><h3>Classement</h3>
+        <span class="badge" style="background:${r.color}">🏆 ${r.name}</span> <span class="big">${profile.trophies}</span>
+        <div class="meter"><i style="width:${Math.round(r.pct * 100)}%;background:${r.color}"></i></div>
+        <div class="small">${r.next ? `${r.next - profile.trophies} trophées avant ${r.nextName}` : 'Rang maximum atteint'}</div></div>
+      <div class="prof-box"><h3>Niveau ${profile.level}</h3>
+        <span class="big">${profile.xp} / ${need} XP</span>
+        <div class="meter"><i style="width:${Math.round(profile.xp / need * 100)}%"></i></div>
+        <div class="small">🪙 ${profile.coins} pièces · série de connexion : ${profile.login.streak} j</div></div>
+      <div class="prof-box"><h3>Statistiques</h3>
+        <div class="small">${profile.games} parties · ${profile.wins} victoires (${winPct} %)</div>
+        <div class="small">Série en cours : ${profile.winStreak} · record : ${profile.bestStreak}</div>
+        <div class="small">Victoire la plus rapide : ${profile.fastest ? profile.fastest + ' tours' : '—'}</div></div>
+      <div class="prof-box"><h3>Défis du jour</h3>${challengeList()}</div>
+    </div>
+    <div class="prof-box"><h3>Boutique de chapeaux</h3><div class="shop" id="shop">${Object.keys(HATS).map((k) => {
+      const h = HATS[k], owned = profile.hats.includes(k), eq = profile.hat === k;
+      const label = eq ? 'Porté' : owned ? 'Porter' : `${h.price} 🪙`;
+      return `<button type="button" data-hat="${k}" class="${eq ? 'eq' : ''}" ${!owned && profile.coins < h.price ? 'disabled' : ''}><span class="ic">${h.icon}</span>${h.name}<span class="pr">${label}</span></button>`;
+    }).join('')}</div></div>`;
+  $('shop').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-hat]'); if (!b) return;
+    const k = b.dataset.hat, h = HATS[k];
+    if (!profile.hats.includes(k)) {
+      if (profile.coins < h.price) return;
+      profile.coins -= h.price; profile.hats.push(k); sfx.coin();
+    }
+    profile.hat = k; saveProfile();
+    sfx.good();
+    renderProfile(); renderProfileStrip();
+    const again = document.querySelector(`#shop button[data-hat="${k}"]`); if (again) again.focus({ preventScroll: true });
+    const owner = state.players.find((q) => q.profile);
+    if (owner) applyHat(owner);
+  });
+}
+function profileName() {
+  const s0 = setup.players.slice(0, setup.count).find((s) => s.human);
+  return s0 ? ((s0.name || '').trim() || 'Joueur') : 'Joueur';
+}
+function applyHat(p) {
+  if (p.pawn.hat) { p.pawn.body.remove(p.pawn.hat); p.pawn.hat = null; }
+  if (p.profile && profile.hat !== 'none') { p.pawn.hat = makeHat(profile.hat); p.pawn.body.add(p.pawn.hat); }
+}
+
+/* ----- main de cartes (bas de l'écran) ----- */
+function leaderOf(p) {
+  return state.players.filter((q) => q !== p).reduce((a, q) => (!a || q.pos > a.pos ? q : a), null);
+}
+function cardUsable(p, key) {
+  if (key === 'swap') { const l = leaderOf(p); return !!l && l.pos > p.pos && l.pos !== LAST; }
+  if (key === 'freeze') return !!leaderOf(p);
+  if (key === 'shield') return !p.shield;
+  return true;
+}
+function renderHand() {
+  const el = $('hand');
+  const p = cur();
+  if (!p || !state.started || !p.human) { el.innerHTML = ''; return; }
+  const canPlay = !state.busy && !state.over && !p.cardUsed;
+  el.innerHTML = p.hand.map((k, i) => {
+    const c = CARDS[k];
+    return `<button class="cardbtn" type="button" data-i="${i}" title="${c.name} : ${c.desc}" aria-label="Carte ${c.name} : ${c.desc}" ${canPlay && cardUsable(p, k) ? '' : 'disabled'}><span>${c.icon}</span>${c.name}</button>`;
+  }).join('');
+}
+
+/* ----- intelligence des robots pour les cartes ----- */
+function botPickCard(p) {
+  if (!p.hand.length || p.cardUsed) return null;
+  const lvl = state.botLevel;
+  const usable = p.hand.filter((k) => cardUsable(p, k));
+  if (!usable.length) return null;
+  if (lvl === 0) return Math.random() < 0.35 ? usable[Math.floor(Math.random() * usable.length)] : null;
+  const has = (k) => usable.includes(k);
+  const l = leaderOf(p);
+  const gap = l ? l.pos - p.pos : 0;
+  if (has('swap') && gap >= (lvl === 2 ? 8 : 13)) return 'swap';
+  if (has('freeze') && l && l.pos >= (lvl === 2 ? 42 : 50) && l.skip === 0) return 'freeze';
+  const trapsAhead = TRAPS.filter((t) => t > p.pos && t <= p.pos + 12).length;
+  if (has('shield') && trapsAhead >= (lvl === 2 ? 1 : 2)) return 'shield';
+  if (has('three') && (lvl === 2 || Math.random() < 0.5)) return 'three';
+  if (has('turbo') && (lvl === 2 ? p.pos < 50 : Math.random() < 0.4)) return 'turbo';
+  return null;
+}
+
 /* ================= Déroulement ================= */
 function newGame() {
   sfx.unlock();
   sfx.setMood('play');
   state.gid++;
   state.players.forEach((p) => scene.remove(p.pawn.root));
+  const ownerIdx = setup.players.slice(0, setup.count).findIndex((s) => s.human);
   state.players = setup.players.slice(0, setup.count).map((s, i) => ({
     idx: i, name: (s.name || '').trim() || DEFAULT_NAMES[i], human: s.human, color: PLAYER_COLORS[i],
     pos: 0, skip: 0, stuck: false, tries: 0, rolled: false, pawn: makePawn(PLAYER_COLORS[i]),
+    profile: i === ownerIdx, hand: [randomCard()], shield: false, frozen: false, cardUsed: false, turbo: false, three: false,
+    turns: 0, stats: { geese: 0, cards: 0, bumps: 0, traps: 0 },
   }));
+  state.botLevel = setup.botLevel;
+  state.players.forEach((p) => {
+    applyHat(p);
+    const bubble = new THREE.Mesh(new THREE.SphereGeometry(0.62, 24, 16), new THREE.MeshBasicMaterial({ color: C('#7fdcff'), transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false }));
+    bubble.position.y = 0.4; bubble.visible = false;
+    p.pawn.root.add(bubble); p.pawn.bubble = bubble;
+  });
   state.players.forEach((p) => { p.pawn.root.position.copy(slotPos(0, p.idx)); p.pawn.root.rotation.y = tilePos[0].rot + Math.PI; });
   state.cur = 0; state.busy = false; state.over = false; state.started = true; state.cine = false;
   winSpin = 0;
@@ -1596,6 +1938,9 @@ async function startTurn() {
   const gid = state.gid;
   const p = cur();
   botPace = p.human ? 1 : 0.7;
+  p.turns++;
+  if (p.shield) { p.shield = false; log(`Le bouclier de ${who(p)} disparaît.`); }
+  p.cardUsed = false; p.turbo = false; p.three = false;
   renderPlayers();
   banner(p);
   await sleep(650);
@@ -1609,9 +1954,16 @@ async function startTurn() {
   if (p.skip > 0) {
     state.busy = true; renderPlayers();
     p.skip--;
-    log(`${who(p)} se repose à l'hôtel.`);
-    sfx.sleep();
-    await toast('💤', `${p.name} se repose`, p.skip ? `Encore ${p.skip} tour à l'hôtel.` : "Dernier tour à l'hôtel.");
+    if (p.frozen) {
+      p.frozen = false;
+      log(`${who(p)} est gelé et passe son tour.`);
+      sfx.bad();
+      await toast('🧊', `${p.name} est gelé`, 'Ce tour-ci, pas de lancer.');
+    } else {
+      log(`${who(p)} se repose à l'hôtel.`);
+      sfx.sleep();
+      await toast('💤', `${p.name} se repose`, p.skip ? `Encore ${p.skip} tour à l'hôtel.` : "Dernier tour à l'hôtel.");
+    }
     if (gid !== state.gid) return;
     state.busy = false;
     return nextPlayer();
@@ -1638,8 +1990,46 @@ async function startTurn() {
     await sleep(500);
     await waitUnpaused();
     if (gid !== state.gid) return;
+    const k = botPickCard(p);
+    if (k) { await playCard(p, k); if (gid !== state.gid) return; await sleep(300); }
     playTurn();
   }
+}
+
+/* Jouer une carte pouvoir (une par tour, avant de lancer les dés) */
+async function playCard(p, key) {
+  if (state.busy || state.over || p !== cur() || p.cardUsed || !p.hand.includes(key) || !cardUsable(p, key)) return;
+  const gid = state.gid;
+  state.busy = true;
+  p.hand.splice(p.hand.indexOf(key), 1);
+  p.cardUsed = true;
+  p.stats.cards++;
+  renderPlayers();
+  const c = CARDS[key];
+  sfx.card();
+  emote(p, c.icon);
+  log(`${who(p)} joue la carte ${c.name}.`);
+  if (key === 'turbo') { p.turbo = true; await toast(c.icon, 'Turbo !', `${p.name} avancera de 3 cases en plus.`, 1300); }
+  else if (key === 'three') { p.three = true; await toast(c.icon, '3 dés', `${p.name} gardera les 2 meilleurs dés.`, 1300); }
+  else if (key === 'shield') { p.shield = true; await toast(c.icon, 'Bouclier', `${p.name} est protégé jusqu'à son prochain tour.`, 1300); }
+  else if (key === 'freeze') {
+    const l = leaderOf(p);
+    l.skip += 1; l.frozen = true;
+    emote(l, '🥶');
+    fx.sparks(l.pawn.root.position.clone(), 16, '#bfe8ff');
+    await toast(c.icon, 'Gel !', `${l.name} passera son prochain tour.`, 1500);
+  } else if (key === 'swap') {
+    const l = leaderOf(p);
+    const a = p.pos, b = l.pos;
+    await toast(c.icon, 'Échange !', `${p.name} prend la place de ${l.name} (case ${b}).`, 1300);
+    if (gid !== state.gid) return;
+    [p, l].forEach((q) => { q.stuck = false; q.tries = 0; });
+    emote(l, '😠');
+    await Promise.all([jumpTo(p, b, { spin: 1 }), jumpTo(l, a, { spin: 1 })]);
+  }
+  if (gid !== state.gid) return;
+  state.busy = false;
+  renderPlayers();
 }
 async function nextPlayer() {
   if (state.over) return;
@@ -1649,10 +2039,11 @@ async function nextPlayer() {
   startTurn();
 }
 
-function showDicePop(a, b) {
+function showDicePop(a, b, o) {
+  o = o || {};
   const el = $('dicePop');
-  el.querySelector('b').textContent = a + b;
-  el.querySelector('span').textContent = `${a} + ${b}`;
+  el.querySelector('b').textContent = a + b + (o.bonus || 0);
+  el.querySelector('span').textContent = `${a} + ${b}` + (o.bonus ? ' + ⚡3' : '') + (o.dropped ? ` · ${o.dropped} écarté` : '');
   el.hidden = false;
   el.style.animationDuration = Math.max(0.9, T(1500) / 1000) + 's';
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
@@ -1665,14 +2056,20 @@ async function playTurn() {
   const gid = state.gid;
   const p = cur();
   state.busy = true; renderPlayers();
-  const a = 1 + Math.floor(Math.random() * 6), b = 1 + Math.floor(Math.random() * 6);
-  const sum = a + b;
+  let a = 1 + Math.floor(Math.random() * 6), b = 1 + Math.floor(Math.random() * 6);
+  let dropped = null;
+  if (p.three) {
+    const all = [a, b, 1 + Math.floor(Math.random() * 6)].sort((x, y) => y - x);
+    [a, b, dropped] = all;
+  }
+  const bonus = p.turbo ? 3 : 0;
+  const sum = a + b + bonus;
   $('diceRes').textContent = '…';
   tintDice(p.color);
   await rollDiceAnim(a, b);
   if (gid !== state.gid) return;
-  $('diceRes').textContent = `${a} + ${b} = ${sum}`;
-  showDicePop(a, b);
+  $('diceRes').textContent = `${a} + ${b}${bonus ? ' + 3' : ''} = ${sum}`;
+  showDicePop(a, b, { bonus, dropped });
   if (a === b) fx.sparks(new THREE.Vector3(0, DAIS_TOP, 0.85), 14);
   await sleep(650);
   if (gid !== state.gid) return;
@@ -1723,6 +2120,16 @@ async function playTurn() {
   if (p.pos !== 0 && p.pos !== LAST) {
     const others = state.players.filter((q) => q !== p && q.pos === p.pos);
     for (const q of others) {
+      if (q.shield) {
+        q.shield = false;
+        log(`Le bouclier de ${who(q)} le protège.`);
+        sfx.good(); emote(q, '😎');
+        fx.sparks(q.pawn.root.position.clone(), 14, '#7fdcff');
+        await toast('🛡️', `${q.name} est protégé`, 'Son bouclier empêche de le déloger.', 1300);
+        if (gid !== state.gid) return;
+        continue;
+      }
+      p.stats.bumps++;
       const freed = q.stuck;
       q.stuck = false; q.skip = 0; q.tries = 0;
       log(`${who(p)} prend la place de ${who(q)}, qui part en case ${origin}.`);
@@ -1746,7 +2153,32 @@ async function resolve(p, sum, gid) {
   for (let guard = 0; guard < 12; guard++) {
     if (gid !== state.gid) return;
     const i = p.pos;
+    if (TRAPS.includes(i) && p.shield) {
+      p.shield = false;
+      log(`Le bouclier de ${who(p)} évite le piège de la case ${i}.`);
+      sfx.good(); emote(p, '😎');
+      fx.sparks(p.pawn.root.position.clone(), 16, '#7fdcff');
+      await toast('🛡️', 'Bouclier !', `${p.name} échappe au piège.`, 1300);
+      return;
+    }
+    if (TRAPS.includes(i)) p.stats.traps++;
+    if (CARD_TILES.includes(i)) {
+      if (p.hand.length < HAND_MAX) {
+        const k = randomCard();
+        p.hand.push(k);
+        log(`${who(p)} pioche une carte.`);
+        sfx.card(); emote(p, CARDS[k].icon);
+        fx.sparks(p.pawn.root.position.clone(), 14, '#c9a6ff');
+        renderPlayers();
+        await toast(p.human ? CARDS[k].icon : '🃏', p.human ? `Carte ${CARDS[k].name}` : 'Carte piochée', p.human ? CARDS[k].desc : `${p.name} a maintenant ${p.hand.length} carte${p.hand.length > 1 ? 's' : ''}.`, 1500);
+      } else {
+        if (p.profile) { profile.coins += 5; saveProfile(); }
+        await toast('🃏', 'Main pleine', p.profile ? '+5 pièces à la place.' : `${p.name} ne peut pas piocher.`, 1200);
+      }
+      return;
+    }
     if (GOOSE.includes(i)) {
+      p.stats.geese++;
       log(`${who(p)} tombe sur une oie en ${i}.`);
       gooseCelebrate(i);
       emote(p, '🤩');
@@ -1795,12 +2227,84 @@ function win(p) {
   setTimeout(() => { fx.confetti(c, 60, 0.9); sfx.honk(); }, 1200);
   setTimeout(() => {
     $('winTitle').innerHTML = `${escapeHtml(p.name)} <span>gagne</span>`;
-    $('winLead').textContent = "Arrivée pile sur la case 63, au Jardin de l'Oie.";
+    $('winLead').textContent = `Arrivée au Jardin de l'Oie en ${p.turns} tours.`;
     const ranked = [...state.players].sort((x, y) => y.pos - x.pos);
     $('winRank').innerHTML = ranked.map((q, k) => `<li><span class="dot" style="background:${q.color}"></span><span>${k + 1}. ${escapeHtml(q.name)}</span><span>case ${q.pos}</span></li>`).join('');
+    $('rewards').innerHTML = rewardsHtml;
     openOverlay('winBox', 'winAgain');
+    animateRewards();
     controls.autoRotateSpeed = 0.45;
   }, 3000);
+  const rewardsHtml = grantRewards(p);
+}
+
+/* Récompenses de fin de partie pour le joueur du profil */
+let pendingAnim = null;
+function grantRewards(winner) {
+  pendingAnim = null;
+  const me = state.players.find((q) => q.profile);
+  if (!me) return '';
+  ensureDaily();
+  const bots = state.players.filter((q) => !q.human).length;
+  const opp = state.players.length - 1;
+  const won = winner === me;
+  const lvl = BOT_LEVELS[state.botLevel] || BOT_LEVELS[1];
+  const g = { won, geese: me.stats.geese, cards: me.stats.cards, bumps: me.stats.bumps, traps: me.stats.traps, turns: me.turns, level: state.botLevel, bots };
+  const before = { tr: profile.trophies, xp: profile.xp, level: profile.level, coins: profile.coins, rank: rankOf(profile.trophies).name };
+  profile.games++; profile.daily.plays++;
+  let dTr;
+  if (won) {
+    profile.wins++; profile.winStreak++; profile.bestStreak = Math.max(profile.bestStreak, profile.winStreak);
+    if (!profile.fastest || me.turns < profile.fastest) profile.fastest = me.turns;
+    dTr = (bots ? lvl.win : 15) + 3 * (opp - 1) + Math.min(profile.winStreak - 1, 5) * 2;
+  } else {
+    profile.winStreak = 0;
+    dTr = -(bots ? lvl.lose : 5);
+  }
+  profile.trophies = Math.max(0, profile.trophies + dTr);
+  const xpGain = 20 + (won ? 40 : 0) + g.geese * 3 + g.cards * 5 + g.bumps * 6;
+  let coinGain = 10 + (won ? Math.round(25 * (bots ? lvl.coin : 1)) : 0);
+  const doneNow = [];
+  profile.daily.ids.forEach((id) => {
+    const c = CHALLENGES.find((x) => x.id === id);
+    if (!profile.daily.done[id] && c.test(g, profile.daily)) { profile.daily.done[id] = true; coinGain += c.reward; doneNow.push(c); }
+  });
+  profile.xp += xpGain;
+  let levelUps = 0;
+  while (profile.xp >= xpNeed(profile.level)) { profile.xp -= xpNeed(profile.level); profile.level++; levelUps++; coinGain += 50; }
+  profile.coins += coinGain;
+  saveProfile();
+  renderProfileStrip();
+  const rNow = rankOf(profile.trophies), rBefore = rankOf(before.tr);
+  pendingAnim = { trFrom: rBefore.name === rNow.name ? rBefore.pct : 0, trTo: rNow.pct, xpFrom: levelUps ? 0 : before.xp / xpNeed(before.level), xpTo: profile.xp / xpNeed(profile.level), coinsFrom: before.coins, coinsTo: profile.coins, won, levelUps, rankUp: rNow.min > rBefore.min, rankDown: rNow.min < rBefore.min };
+  const sign = dTr >= 0 ? '+' : '';
+  return `<div class="rewards">
+    <div class="rw-row"><span><span class="badge" style="background:${rNow.color}">${rNow.name}</span></span><div class="meter"><i id="rwTr" style="width:${Math.round(pendingAnim.trFrom * 100)}%;background:${rNow.color}"></i></div><span class="v ${dTr >= 0 ? 'rw-up' : 'rw-down'}">${sign}${dTr} 🏆</span></div>
+    <div class="rw-row"><span>Niveau ${profile.level}</span><div class="meter"><i id="rwXp" style="width:${Math.round(pendingAnim.xpFrom * 100)}%"></i></div><span class="v rw-up">+${xpGain} XP</span></div>
+    <div class="rw-row"><span>Pièces</span><span class="small">${won ? 'Victoire' : 'Participation'}${doneNow.length ? ' + défis' : ''}${levelUps ? ' + niveau' : ''}</span><span class="v rw-up">🪙 <span id="rwCoins">${before.coins}</span></span></div>
+    ${levelUps ? `<div class="rw-note">⭐ Niveau ${profile.level} atteint ! +${50 * levelUps} pièces</div>` : ''}
+    ${pendingAnim.rankUp ? `<div class="rw-note">🏆 Nouveau rang : ${rNow.name} !</div>` : ''}
+    ${won && profile.winStreak > 1 ? `<div class="rw-note">🔥 Série de ${profile.winStreak} victoires</div>` : ''}
+    ${doneNow.map((c) => `<div class="rw-note">✅ Défi réussi : ${c.text} (+${c.reward} 🪙)</div>`).join('')}
+  </div>`;
+}
+function animateRewards() {
+  const a = pendingAnim; if (!a) return;
+  setTimeout(() => {
+    const tr = $('rwTr'), xp = $('rwXp');
+    if (tr) tr.style.width = Math.round(a.trTo * 100) + '%';
+    if (xp) xp.style.width = Math.round(a.xpTo * 100) + '%';
+    if (a.levelUps || a.rankUp) setTimeout(() => sfx.levelUp(), 700);
+    const el = $('rwCoins');
+    if (!el) return;
+    const steps = 20; let k = 0;
+    const iv = setInterval(() => {
+      k++;
+      el.textContent = Math.round(a.coinsFrom + (a.coinsTo - a.coinsFrom) * k / steps);
+      if (k % 2) sfx.coin();
+      if (k >= steps) clearInterval(iv);
+    }, 50);
+  }, 350);
 }
 
 /* ================= Configuration et boutons ================= */
@@ -1808,6 +2312,8 @@ function renderSetup() {
   document.querySelectorAll('#countSeg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.n === setup.count)));
   document.querySelectorAll('#speedSeg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.s === speedIdx)));
   document.querySelectorAll('#modeSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === gameMode)));
+  document.querySelectorAll('#botSeg button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.b === setup.botLevel)));
+  renderProfileStrip();
   const rows = $('setupRows');
   rows.innerHTML = '';
   for (let i = 0; i < setup.count; i++) {
@@ -1836,12 +2342,21 @@ $('modeSeg').addEventListener('click', (e) => {
   gameMode = b.dataset.m; store.set('mode', gameMode);
   renderSetup(); renderRules(); renderPlayers();
 });
-$('speedSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; setSpeed(+b.dataset.s); });
+$('botSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; setup.botLevel = +b.dataset.b; store.set('bots', setup.botLevel); renderSetup(); });
+const openProfile = () => { renderProfile(); openOverlay('profileBox', 'profClose'); };
+$('btnProfile').addEventListener('click', openProfile);
+$('btnProfile2').addEventListener('click', openProfile);
+$('profClose').addEventListener('click', () => closeOverlay('profileBox'));
+$('hand').addEventListener('click', (e) => {
+  const b = e.target.closest('.cardbtn'); const p = cur();
+  if (!b || !p || !p.human) return;
+  playCard(p, p.hand[+b.dataset.i]);
+});
 $('btnSpeed').addEventListener('click', () => setSpeed((speedIdx + 1) % SPEEDS.length));
 $('btnSound').addEventListener('click', (e) => { sfx.unlock(); const on = sfx.toggle(); e.currentTarget.setAttribute('aria-pressed', String(on)); e.currentTarget.textContent = on ? 'Son' : 'Son coupé'; });
-const overlayIds = ['rulesBox', 'winBox', 'setup'];
+const overlayIds = ['rulesBox', 'profileBox', 'winBox', 'setup'];
 const lastFocus = {};
-function updatePause() { state.paused = state.started && !state.over && (!$('setup').hidden || !$('rulesBox').hidden); }
+function updatePause() { state.paused = state.started && !state.over && (!$('setup').hidden || !$('rulesBox').hidden || !$('profileBox').hidden); }
 function openOverlay(id, focusId) {
   lastFocus[id] = document.activeElement;
   $(id).hidden = false;
@@ -1918,6 +2433,7 @@ function moveFocus(dir) {
 // Appelée par l'application Android TV sur la touche Retour ; renvoie false pour quitter l'application.
 window.tvBack = function () {
   if (!$('rulesBox').hidden) { closeOverlay('rulesBox'); return true; }
+  if (!$('profileBox').hidden) { closeOverlay('profileBox'); return true; }
   if (!$('winBox').hidden) return false;
   if (!$('setup').hidden) return false;
   openSetup();
@@ -1992,6 +2508,7 @@ controls.addEventListener('end', () => { userOrbiting = false; if (!state.cine) 
 const followTarget = new THREE.Vector3();
 const tmpV = new THREE.Vector3();
 const GREY = new THREE.Color(0.06, 0.06, 0.07);
+const ICE = new THREE.Color(0.55, 0.8, 1);
 const clock = new THREE.Clock();
 function frame() {
   const rawDt = clock.getDelta();
@@ -2034,6 +2551,9 @@ function frame() {
     b.position.y += ((q.skip > 0 ? 0.14 : 0) + sink - b.position.y) * Math.min(1, dt * 4);
     const grey = q.stuck ? 0.55 : 0;
     q.pawn.mat.color.copy(q.pawn.base).lerp(GREY, grey);
+    if (q.frozen) q.pawn.mat.color.lerp(ICE, 0.65);
+    if (q.pawn.bubble) { q.pawn.bubble.visible = !!q.shield; if (q.shield) { const sc = 1 + Math.sin(t * 4) * 0.05; q.pawn.bubble.scale.set(sc, sc, sc); } }
+    if (q.pawn.hat && q.pawn.hat.userData.spin) q.pawn.hat.userData.spin.rotation.z = t * 2;
     // regarde la caméra quand personne ne bouge, cligne des yeux
     if (!state.busy) {
       const want = Math.atan2(camera.position.x - q.pawn.root.position.x, camera.position.z - q.pawn.root.position.z);
@@ -2080,7 +2600,7 @@ function frame() {
     d.inner.rotation.y = Math.sin(t * 0.4 + d.phase) * 0.3;
   }
   animatedProps.forEach((g) => {
-    if (g.userData.spin) g.userData.spin.rotation.y = t * 0.8;
+    if (g.userData.spin) { g.userData.spin.rotation.y = t * 0.8; if (g.userData.spin.position.y > 0.3) g.userData.spin.position.y = 0.32 + Math.sin(t * 2 + g.id) * 0.04; }
     if (g.userData.flag) g.userData.flag.rotation.y = Math.sin(t * 3) * 0.25;
   });
   if (goldGoose) {
@@ -2132,6 +2652,9 @@ const fontsReady = document.fonts && document.fonts.load
 fontsReady.catch(() => {}).then(() => {
   buildBoard();
   $('loading').remove();
+  ensureDaily();
+  const bonus = loginBonus();
+  if (bonus) { $('dailyMsg').textContent = bonus; $('dailyMsg').hidden = false; }
   renderSetup();
   renderPlayers();
   frame();
